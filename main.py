@@ -4,13 +4,13 @@ from obj_functions import page_distribution, show_objects
 from Note import Buttons, Note
 
 def __init__():
-    '''Создает настройки главного окна'''
-    global master, entry, main_frame, button_frame, status, next_btn, back_btn
-    # ============ переменные =============================
+    '''Формирует основные виджеты на главном окне'''
+    #============ переменные =============================
     global active_page, obj_on_page
     obj_on_page = page_distribution()
     active_page = 1  # активная страница
-
+    #================ создание основыных виджетов =============================
+    global master, entry, main_frame, button_frame, status, next_btn, back_btn
     master = Tk()
     master.title("Password Manager")
     master.iconbitmap("icon.ico")
@@ -124,6 +124,7 @@ def page_down():
 
 
 def main():
+    #========= создание основных виджетов =============
     __init__()
 
     #========= создание всех кнопок ===================
