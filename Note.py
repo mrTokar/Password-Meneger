@@ -1,6 +1,6 @@
 '''Содержит классы Note и Buttons'''
 
-from tkinter import Tk, PhotoImage, RIGHT, X, LEFT, BOTTOM, TOP, FLAT, Button , Entry, Label, Frame, BOTH, RAISED
+from tkinter import Tk, PhotoImage, X, LEFT, FLAT, Button , Entry, Label, Frame, BOTH, RAISED
 from tkinter import Toplevel
 from tkinter.messagebox import askyesno
 from tkinter.filedialog import askopenfilename
