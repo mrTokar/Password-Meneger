@@ -1,6 +1,6 @@
 from tkinter import Tk, X, RIGHT, BOTH, BOTTOM, Label
 from tkinter.ttk import Frame, Entry
-from obj_functions import page_distribution, show_objectsэ
+from functoins.obj_functions import page_distribution, show_objects
 from Note import Buttons, Note
 
 def __init__():
