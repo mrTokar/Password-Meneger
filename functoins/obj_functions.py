@@ -10,7 +10,7 @@ def page_distribution(filter=''):
     '''возвращет вложенный спиок с
      распределенными объектами списока arr по сраницам
      (на одной странице 12 обектов)'''
-    arr = listdir("data")
+    arr = listdir("../data")
     page = 0
     obj_on_page = []
     while arr != []:
