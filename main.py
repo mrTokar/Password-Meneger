@@ -3,8 +3,9 @@ from tkinter.ttk import Frame, Entry
 from functoins.obj_functions import page_distribution, show_objects
 from Note import Buttons, Note
 
+
 def __init__():
-    '''Создает настройки главного окна'''
+    """Создает настройки главного окна"""
     global master, entry, main_frame, button_frame, status, next_btn, back_btn
     # ============ переменные =============================
     global active_page, obj_on_page
@@ -56,39 +57,39 @@ def __init__():
 
 
 def add_new():
-    '''Добавляет новый обект'''
+    """Добавляет новый обект"""
     new = Note(['', '', '', None])
-    new.open_window(master= master)
+    new.open_window(master=master)
 
 
 def search(event=None):
-    '''выводит все объекты удовлетворяющий введеной строке в поле Entry\n
-    event - своеобразная заглушка для привязки к Enter'''
+    """выводит все объекты удовлетворяющий введеной строке в поле Entry\n
+    event - своеобразная заглушка для привязки к Enter"""
     global active_page, obj_on_page, button_frame
 
-    obj_on_page = page_distribution(filter= entry.get())
+    obj_on_page = page_distribution(user_input=entry.get())
 
-    #=========== корректировка вывода =====================
+    # =========== корректировка вывода =====================
     button_frame.destroy()
     button_frame = Frame(main_frame)
     button_frame.pack()
     show_objects(button_frame, obj_on_page[0])
 
     active_page = 1
-    status.config(text= f"Страница {active_page} из {len(obj_on_page)}")
-    back_btn.disable() # кнопка назад
-    if active_page == len(obj_on_page): # кнопка далее
+    status.config(text=f"Страница {active_page} из {len(obj_on_page)}")
+    back_btn.disable()  # кнопка назад
+    if active_page == len(obj_on_page):  # кнопка далее
         next_btn.disable()
     else:
         next_btn.enable()
 
 
 def page_up():
-    '''перелистывает на следующую страницу'''
+    """перелистывает на следующую страницу"""
     global active_page, obj_on_page, button_frame
-    #================= корректировка нижней строчки ==================
+    # ================= корректировка нижней строчки ==================
     active_page += 1
-    status.config(text= f"Страница {active_page} из {len(obj_on_page)}")
+    status.config(text=f"Страница {active_page} из {len(obj_on_page)}")
 
     # кнопка далее
     if active_page == len(obj_on_page):
@@ -96,22 +97,21 @@ def page_up():
     else:
         next_btn.enable()
 
-    back_btn.enable() # кнопка назад
+    back_btn.enable()  # кнопка назад
     button_frame.destroy()
     button_frame = Frame(main_frame)
     button_frame.pack()
     show_objects(button_frame, obj_on_page[active_page - 1])
 
 
-
 def page_down():
-    '''перелистывает на страницу назад'''
+    """перелистывает на страницу назад"""
     global active_page, obj_on_page, button_frame
     # ================= корректировка нижней строчки ==================
     active_page -= 1
-    status.config(text= f"Страница {active_page} из {len(obj_on_page)}")
+    status.config(text=f"Страница {active_page} из {len(obj_on_page)}")
 
-    next_btn.enable() # кнопка далее
+    next_btn.enable()  # кнопка далее
     # кнопка назад
     if active_page == 1:
         back_btn.disable()
@@ -126,10 +126,10 @@ def page_down():
 def main():
     __init__()
 
-    #========= создание всех кнопок ===================
+    # ========= создание всех кнопок ===================
     show_objects(button_frame, obj_on_page[0])
 
-    #========== запуск главного окна ===================
+    # ========== запуск главного окна ===================
     master.bind("<Return>", search)
     master.mainloop()
 
