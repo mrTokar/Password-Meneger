@@ -2,7 +2,7 @@
 
 from Note import Note
 from tkinter import Button, FLAT
-from pickle_functions import loading
+from functoins.pickle_functions import loading
 from os import listdir
 
 
@@ -10,7 +10,7 @@ def page_distribution(user_input=''):
     """возвращет вложенный спиок с
      распределенными объектами списока arr по сраницам
      (на одной странице 12 обектов)"""
-    arr = listdir("../data")
+    arr = listdir("data")
     page = 0
     obj_on_page = []
     while arr:
