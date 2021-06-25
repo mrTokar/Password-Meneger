@@ -19,7 +19,7 @@ def page_distribution(user_input=''):
         while i != 12:
             if arr:
                 item = arr.pop(0)
-                if user_input in item:
+                if user_input.lower() in item.lower():
                     obj_on_page[page].append(item)
                     i += 1
             else:

@@ -130,7 +130,7 @@ def main():
     show_objects(button_frame, obj_on_page[0])
 
     # ========== запуск главного окна ===================
-    master.bind("<Return>", search)
+    master.bind("<Key>", search)
     master.mainloop()
 
 
