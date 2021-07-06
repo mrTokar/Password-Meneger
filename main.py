@@ -1,7 +1,8 @@
 from tkinter import Tk, X, RIGHT, BOTH, BOTTOM, Label
 from tkinter.ttk import Frame, Entry
 from functoins.obj_functions import page_distribution, show_objects
-from Note import Buttons, Note
+from functoins.file_functions import check_directory
+from GUI import Buttons, Note
 
 
 def __init__():
@@ -124,6 +125,7 @@ def page_down():
 
 
 def main():
+    check_directory()
     __init__()
 
     # ========= создание всех кнопок ===================

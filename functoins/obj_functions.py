@@ -1,16 +1,18 @@
 """Содержит функции связанные с объектами(note): page_distribution и show_objects"""
 
-from Note import Note
+from GUI import Note
 from tkinter import Button, FLAT
-from functoins.pickle_functions import loading
-from os import listdir
+from tkinter.messagebox import showwarning
+from functoins.file_functions import loading
+import os
+import sys
 
 
 def page_distribution(user_input=''):
     """возвращет вложенный спиок с
      распределенными объектами списока arr по сраницам
      (на одной странице 12 обектов)"""
-    arr = listdir("data")
+    arr = os.listdir("data")
     page = 0
     obj_on_page = []
     while arr:
@@ -19,7 +21,7 @@ def page_distribution(user_input=''):
         while i != 12:
             if arr:
                 item = arr.pop(0)
-                if user_input.lower() in item.lower():
+                if (user_input.lower() in item.lower()) and (item[-5:] == ".data"):
                     obj_on_page[page].append(item)
                     i += 1
             else:
@@ -34,8 +36,15 @@ def show_objects(root, arr):
     i = 0
     for file in arr:
         if file is not None:
-            note = Note(loading(file[:-5]))
-            note.add_button(root).grid(row=i // 4, column=i % 4)
+            try:
+                note = Note(loading(file[:-5]))
+                note.add_button(root).grid(row=i // 4, column=i % 4)
+            except EOFError:
+                os.remove(f"data/{file}")
+                showwarning(title="Преупреждение", message="Внимение\nОбнаружен чужеродный файл, для корректоной работы программа перезапустится")
+                python = sys.executable
+                os.execl(python, python, *sys.argv)
+                continue
         else:
             Button(root, relief=FLAT, width=20, height=10).grid(row=i // 4, column=i % 4)
         i += 1

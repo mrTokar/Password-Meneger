@@ -4,7 +4,7 @@ from tkinter import Tk, PhotoImage, X, LEFT, FLAT, Button, Entry, Label, Frame, 
 from tkinter import Toplevel
 from tkinter.messagebox import askyesno
 from tkinter.filedialog import askopenfilename
-from functoins.pickle_functions import saving
+from functoins.file_functions import saving
 from os import remove
 
 
@@ -106,12 +106,15 @@ class Note:
     def save_note(self):
         """сохраняет данные"""
         if self.name != self.name_entry.get():
-            remove(f"data/{self.name}.data")
-            self.name = self.name_entry.get()
+            try:
+                remove(f"data/{self.name}.data")
+                self.name = self.name_entry.get()
+            except FileNotFoundError:
+                self.name = self.name_entry.get()
         self.nickname = self.nickname_entry.get()
         self.password = self.password_entry.get()
         self.icon = self.icon
-        saving(self.name, [self.name, self.nickname, self.password, self.icon])
+        saving([self.name, self.nickname, self.password, self.icon])
         self.password_window.destroy()
 
     def choose_icon(self):
