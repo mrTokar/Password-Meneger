@@ -27,6 +27,33 @@ class Window:
         self.master.mainloop()
 
 
+class ChildWindow:
+    """  Класс дочерних окон. Создает дочернее окно от аргумента parent.
+    При инициализации имеет аргумент по умаолчанию name='Password Manager
+    Сразу установлены размеры окна и иконка. Автоматически создается 2 пространтсва: Освновное и для нижних кнопок'"""
+
+
+    def __init__(self, parent, width:int, height:int, name:str, resizeble=(False, False), **commands):
+        self.root = Toplevel(parent)
+        self.root.title(name)
+        self.root.iconbitmap("icon.ico")
+        self.root.geometry(
+            f"{width}x{height}+{self.root.winfo_screenwidth() // 2 - (width//2)}+{self.root.winfo_screenheight() // 2 - (height//2)}"
+        )
+        self.root.grab_set()
+        self.root.focus_set()
+        self.root.wait_window()
+        if name == 'Generate Password':
+            pass
+        else:
+            self.note_decorate(commands)
+
+
+    def note_decorate(self, commands):
+        """Добавляет виджеты в дочернее окно. Оформление для Note"""
+        pass
+
+
 class Note:
     """Класс обектов содержащих все записи. Имеет методы для создания окна содержащего всю информацию
     и для добавления кнопки этой записи на главное окошко"""
