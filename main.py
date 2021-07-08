@@ -2,32 +2,28 @@ from tkinter import Tk, X, RIGHT, BOTH, BOTTOM, Label
 from tkinter.ttk import Frame, Entry
 from functoins.obj_functions import page_distribution, show_objects
 from functoins.file_functions import check_directory
-from GUI import Buttons, Note
+from GUI import Buttons, Note, Window
 
 
 def __init__():
     """Создает настройки главного окна"""
-    global master, entry, main_frame, button_frame, status, next_btn, back_btn
+    global main_window, entry, main_frame, button_frame, status, next_btn, back_btn
     # ============ переменные =============================
     global active_page, obj_on_page
     obj_on_page = page_distribution()
     active_page = 1  # активная страница
 
-    master = Tk()
-    master.title("Password Manager")
-    master.iconbitmap("icon.ico")
-    master.geometry(f"620x600+{master.winfo_screenwidth() // 2 - 310}+{master.winfo_screenheight() // 2 - 300}")
-    master.resizable(False, False)
+    main_window = Window(620,600)
 
     # ============ виджеты поиска ========================
-    search_frame = Frame(master)
+    search_frame = Frame(main_window.master)
     search_frame.pack(fill=X, padx=5, pady=5)
 
     entry = Entry(search_frame)
     entry.pack(fill=X, padx=5, expand=True)
 
     # ============ копки Найти и Добавить =================
-    frame2 = Frame(master)  # рамка дял кнопок Найти и Добавить
+    frame2 = Frame(main_window.master)  # рамка дял кнопок Найти и Добавить
     frame2.pack(fill=X)
 
     Buttons(frame2, text='Добавть', command=add_new).pack(side=RIGHT, padx=5, pady=5)
@@ -35,7 +31,7 @@ def __init__():
     Buttons(frame2, text='Найти', command=search).pack(side=RIGHT)
 
     # ========= виджеты результата поиска ==========
-    main_frame = Frame(master)  # общая рамка для обектов и кнопок перелистывания
+    main_frame = Frame(main_window.master)  # общая рамка для обектов и кнопок перелистывания
     main_frame.pack(fill=BOTH, expand=True)
 
     button_frame = Frame(main_frame)  # рамка для объектов
@@ -60,7 +56,7 @@ def __init__():
 def add_new():
     """Добавляет новый обект"""
     new = Note(['', '', '', None])
-    new.open_window(master=master)
+    new.open_window(master=main_window.master)
 
 
 def search(event=None):
@@ -132,8 +128,8 @@ def main():
     show_objects(button_frame, obj_on_page[0])
 
     # ========== запуск главного окна ===================
-    master.bind("<Key>", search)
-    master.mainloop()
+    main_window.master.bind("<Key>", search)
+    main_window.run()
 
 
 if __name__ == "__main__":

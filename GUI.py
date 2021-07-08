@@ -8,6 +8,25 @@ from functoins.file_functions import saving
 from os import remove
 
 
+class Window:
+    """Класс главного окна"""
+
+
+    def __init__(self, width:int, height:int, name="Password Manager"):
+        self.master = Tk()
+        self.master.title(name)
+        self.master.iconbitmap("icon.ico")
+        self.master.geometry(
+            f"{width}x{height}+{self.master.winfo_screenwidth() // 2 - (width//2)}+{self.master.winfo_screenheight() // 2 - (height//2)}"
+        )
+        self.master.resizable(False, False)
+
+
+    def run(self):
+        "Открывает окно"
+        self.master.mainloop()
+
+
 class Note:
     """Класс обектов содержащих все записи. Имеет методы для создания окна содержащего всю информацию
     и для добавления кнопки этой записи на главное окошко"""
