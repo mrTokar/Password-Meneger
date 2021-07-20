@@ -311,14 +311,16 @@ class Note:
     """Класс обектов содержащих все записи. Имеет методы для создания окна содержащего всю информацию
     и для добавления кнопки этой записи на главное окошко"""
 
-    def __init__(self, arr: list):
-        """ функция инициализации объекта
-         arr - спиок [name, nickname, password, icon]"""
+    def __init__(self, arr: list, update_func):
+        """инициализации объекта \n
+         arr - спиок [name, nickname, password, icon] \n
+         update_func - ссылка на функцию searh()"""
         self.name = arr[0]
         self.nickname = arr[1]
         self.password = arr[2]
         self.icon = None
         self.disable_del = False
+        self.update_func = update_func
 
     def add_button(self, master: Tk) -> Buttons:
         """Добавляет инонку записи в окно. И возвращает данную кнопку"""
@@ -396,6 +398,7 @@ class Note:
         self.icon = self.password_window.get_dir_icon()
         saving([self.name, self.nickname, self.password, self.icon])
         self.password_window.close_window()
+        self.update_func()
 
     def choose_icon(self):
         """Открывает диалоговое окно для выбора файла"""
@@ -416,6 +419,7 @@ class Note:
             self.icon = None
             self.disable_del = True
             self.password_window.close_window()
+            self.update_func()
 
     def close_note(self):
         """Вызывает уточняющий messagebox если новые изменения не сохранены."""
@@ -429,3 +433,4 @@ class Note:
                               message="Вы не сохранили последние изменения.\n           Вы точно хотите выйти?")
             if answer:
                 self.password_window.close_window()
+                self.update_func()

@@ -31,13 +31,13 @@ def page_distribution(user_input=''):
     return obj_on_page
 
 
-def show_objects(root, arr):
+def show_objects(root, arr, update_func):
     """выводит обекты из списка arr на экран"""
     i = 0
     for file in arr:
-        if file is not None:
+        if file:
             try:
-                note = Note(loading(file[:-5]))
+                note = Note(loading(file[:-5]), update_func)
                 note.add_button(root).grid(row=i // 4, column=i % 4)
             except EOFError:
                 os.remove(f"data/{file}")
