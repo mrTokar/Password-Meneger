@@ -1,4 +1,4 @@
-from tkinter import X, RIGHT, BOTH, BOTTOM, Label
+from tkinter import Tk, X, RIGHT, BOTH, BOTTOM, Label
 from tkinter.ttk import Frame, Entry
 from functoins.obj_functions import page_distribution, show_objects
 from functoins.file_functions import check_directory
@@ -53,6 +53,12 @@ def __init__():
     back_btn.disable()
 
 
+def add_new():
+    """Добавляет новый обект"""
+    new = Note(['', '', '', None])
+    new.open_window(master=main_window.master)
+
+
 def search(event=None):
     """выводит все объекты удовлетворяющий введеной строке в поле Entry\n
     event - своеобразная заглушка для привязки к Enter"""
@@ -64,7 +70,7 @@ def search(event=None):
     button_frame.destroy()
     button_frame = Frame(main_frame)
     button_frame.pack()
-    show_objects(button_frame, obj_on_page[0], search)
+    show_objects(button_frame, obj_on_page[0])
 
     active_page = 1
     status.config(text=f"Страница {active_page} из {len(obj_on_page)}")
@@ -73,12 +79,6 @@ def search(event=None):
         next_btn.disable()
     else:
         next_btn.enable()
-
-
-def add_new():
-    """Добавляет новый обект"""
-    new = Note(['', '', '', None], search)
-    new.open_window(master=main_window.master)
 
 
 def page_up():
@@ -125,7 +125,7 @@ def main():
     __init__()
 
     # ========= создание всех кнопок ===================
-    show_objects(button_frame, obj_on_page[0], search)
+    show_objects(button_frame, obj_on_page[0])
 
     # ========== запуск главного окна ===================
     main_window.master.bind("<Key>", search)

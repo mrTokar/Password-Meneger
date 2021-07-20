@@ -20,13 +20,13 @@ def loading(name:str):
 def check_directory():
     # проверяет наличие нужных файлов
     try:
-        flag = True
+        true_files = []
         for file in listdir("data"):
             if file[-5:] == '.data':
-                flag = False
+                true_files.append(file)
             else:
                 remove(f"data/{file}")
-        if flag:
+        if len(true_files) == 0:
             saving(["Example", "test@e-mail.com", "123456789", ""])
     except FileNotFoundError:
         mkdir("data")
