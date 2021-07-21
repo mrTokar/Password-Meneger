@@ -1,12 +1,14 @@
 """Содержит классы связанные с GUI приложения: Note, Window, ChildWindow, NoteWindow, Buttons"""
 
-from tkinter import Tk, PhotoImage, X, LEFT, FLAT, Button, Entry, Label, Frame, BOTH, RAISED, RIGHT
-from tkinter import Toplevel, W, Checkbutton, IntVar, Radiobutton, Scale, StringVar
-from tkinter.constants import HORIZONTAL
+from tkinter import Tk, Button, Entry, Label, Frame
+from tkinter import Toplevel, Checkbutton, IntVar, Radiobutton, Scale, StringVar
+from tkinter.constants import TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT
 from tkinter.messagebox import askyesno
 from tkinter.filedialog import askopenfilename
+from PIL import Image as PilImage
+from PIL import ImageTk
 from functoins.file_functions import saving
-from os import remove
+from os import remove, rename
 import pyperclip as ppc
 from random import choice
 
@@ -85,7 +87,7 @@ class ChildWindow:
 class NoteWindow(ChildWindow):
     """Дочерний класс от класса ChildWindow. Конфигупрация виджетов для Note"""
 
-    def __init__(self, parent, width: int, height: int, name: str, resizeble=(False, True), **commands):
+    def __init__(self, parent: Tk or Toplevel, width: int, height: int, name: str, resizeble=(False, True), **commands):
         ChildWindow.__init__(self, parent, width, height, name, resizeble)
 
         # Коррекитровка нижних кнопок
@@ -102,8 +104,7 @@ class NoteWindow(ChildWindow):
         icon_frame.pack(fill=X, pady=10, padx=50)
 
         self.image_lbl = Label(icon_frame)
-        self.image_lbl.pack(side=LEFT, expand=True)
-        Button(icon_frame, text="Выбрать иконку...", command=commands['choose_command']).pack(expand=True, side=LEFT)
+        self.image_lbl.pack(side=LEFT)
 
         # название
         name_frame = Frame(self.main_frame)
@@ -126,8 +127,21 @@ class NoteWindow(ChildWindow):
         self.password_entry = Entry(password_frame, font=('Andale Mono', 10))
         self.password_entry.pack(fill=X, padx=5, expand=True)
 
-        # кнопка для генерации пароля
-        Buttons(self.main_frame, text='Сгенерировать пароль', command=self.open_generate_window).pack()
+        Label(self.main_frame).pack(side=LEFT, padx=65)
+        Button(self.main_frame, text="Выбрать иконку", command=commands['choose_command']).pack(side=LEFT)  # кнопка для выбора иконки
+        Buttons(self.main_frame, text='Сгенерировать пароль', command=self.open_generate_window).pack(side=LEFT, padx=10)  # кнопка для генерации пароля
+
+    def update_icon(self, dir_image: str or None):
+        """Обновляет иконку. Показывает изображение находящееся по пути dir_image. \n
+        Если же в качетсве аргумента передан None, то будет отображаться lock.png"""
+        if dir_image:  # если изображение существует
+            img = PilImage.open(dir_image)
+            self.photoimage = ImageTk.PhotoImage(img)
+        else: # иначе загружаем картинку поумолчанию lock.png
+            img = PilImage.open('lock.png')
+            self.photoimage = ImageTk.PhotoImage(img)
+        
+        self.image_lbl.config(image=self.photoimage)  # отображение картинки
 
     def open_generate_window(self):
         """Открывает окно с генерацией пароля"""
@@ -154,10 +168,6 @@ class NoteWindow(ChildWindow):
         """Возвращает текст из password_entry"""
         return self.password_entry.get()
 
-    def get_dir_icon(self) -> str:
-        """Возвращает путь к иконке"""
-        pass
-
     def insert_text(self, **messages):
         """Вставляет текст в указанные Entry"""
         try:
@@ -183,7 +193,7 @@ class NoteWindow(ChildWindow):
 class GenerateWindow(ChildWindow):
     """Дочерний класс от класса ChildWindow. Конфигупрация виджетов для GeneratePassword"""
 
-    def __init__(self, parent, width: int, height: int, name: str, resizeble=(False, False)):
+    def __init__(self, parent: Tk or Toplevel, width: int, height: int, name: str, resizeble=(False, False)):
         ChildWindow.__init__(self, parent, width, height, name, resizeble)
 
         # корректировка нижгних кнопок
@@ -311,35 +321,44 @@ class Note:
     """Класс обектов содержащих все записи. Имеет методы для создания окна содержащего всю информацию
     и для добавления кнопки этой записи на главное окошко"""
 
-    def __init__(self, arr: list):
-        """ функция инициализации объекта
-         arr - спиок [name, nickname, password, icon]"""
+    def __init__(self, arr: list, update_func):
+        """инициализации объекта \n
+         arr - спиок [name, nickname, password, icon] \n
+         update_func - ссылка на функцию searh()"""
         self.name = arr[0]
         self.nickname = arr[1]
         self.password = arr[2]
-        self.icon = None
+        self.icon = arr[3]
         self.disable_del = False
+        self.update_func = update_func
 
     def add_button(self, master: Tk) -> Buttons:
         """Добавляет инонку записи в окно. И возвращает данную кнопку"""
         self.master = master
         formed_name = self.formatted_name()
-        img = PhotoImage(file=self.icon) if self.icon is not None else None
+        if self.icon:
+            img = PilImage.open(self.icon)
+            self.photoimage = ImageTk.PhotoImage(img)
+        else:
+            img = PilImage.open('lock.png')
+            self.photoimage = ImageTk.PhotoImage(img)
         btn = Buttons(master, text=formed_name, activebackground="#CCCCCC", relief=FLAT,
-                      width=20, height=10, command=self.open_window)
+                      width=145, height=155, image=self.photoimage, compound=TOP, command=self.open_window)
         return btn
 
     def open_window(self, master=None):
         """Открывает окно данной записки.\n
         Аргумент master нужен для функции add_new(), т.к. она не вызывает аргумент add_button"""
         if master:
-            self.password_window = NoteWindow(master, 500, 250, self.name, del_command=self.del_note,
+            self.password_window = NoteWindow(master, 500, 300, self.name, del_command=self.del_note,
                                               ok_command=self.save_note, close_command=self.close_note,
                                               choose_command=self.choose_icon)
         else:
-            self.password_window = NoteWindow(self.master, 500, 250, self.name, del_command=self.del_note,
+            self.password_window = NoteWindow(self.master, 500, 325, self.name, del_command=self.del_note,
                                               ok_command=self.save_note, close_command=self.close_note,
                                               choose_command=self.choose_icon)
+
+        self.password_window.update_icon(self.icon)
 
         if master or self.disable_del:
             # если объект новый, то удалить его нельзя
@@ -393,16 +412,29 @@ class Note:
                 self.name = self.password_window.get_name()
         self.nickname = self.password_window.get_nickname()
         self.password = self.password_window.get_password()
-        self.icon = self.password_window.get_dir_icon()
+        if self.icon:
+            rename(self.icon, f"images/{self.name}.png")
         saving([self.name, self.nickname, self.password, self.icon])
         self.password_window.close_window()
+        self.update_func()
 
     def choose_icon(self):
         """Открывает диалоговое окно для выбора файла"""
         root = Tk()
         root.iconbitmap("icon.ico")
         root.withdraw()
-        self.icon = askopenfilename()
+        dir_image = askopenfilename(filetypes=(('All images', '*.png;*.jpg;*.jpeg;*.jpe;*JPG;*.gif;*.ico'),
+                                          ('PNG', '*.png'),
+                                          ('JPEG', '*.jpg;*.jpeg;*.jpe;*JPG'),
+                                          ('GIF', '*.gif'),
+                                          ('ICO', '*.ico')))
+        if dir_image != '':
+            img = PilImage.open(dir_image)
+            img = img.resize((100,100), PilImage.ANTIALIAS)
+            name = 'noname' if self.name == '' else self.name
+            img.save(f'images/{name}.png')
+            self.icon = f'images/{name}.png'
+            self.password_window.update_icon(self.icon)
 
     def del_note(self):
         """Вызывает уточняющий messagebox и удаляет записку при потвержении."""
@@ -410,12 +442,12 @@ class Note:
                           message=f"Вы действительно хотите безвозратно удалить пароль от {self.name}?")
         if answer:
             remove(f"data/{self.name}.data")
-            self.name = ''
-            self.nickname = ''
-            self.password = ''
-            self.icon = None
-            self.disable_del = True
+            try:
+                remove(f"images/{self.name}.png")
+            except:
+                pass
             self.password_window.close_window()
+            self.update_func()
 
     def close_note(self):
         """Вызывает уточняющий messagebox если новые изменения не сохранены."""
@@ -429,3 +461,4 @@ class Note:
                               message="Вы не сохранили последние изменения.\n           Вы точно хотите выйти?")
             if answer:
                 self.password_window.close_window()
+                self.update_func()
