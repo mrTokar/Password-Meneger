@@ -5,7 +5,7 @@ from functoins.file_functions import check_directory
 from GUI import Buttons, Note, Window
 
 
-def __init__():
+def create_widgets():
     """Создает настройки главного окна"""
     global main_window, entry, main_frame, button_frame, status, next_btn, back_btn
     # ============ переменные =============================
@@ -122,7 +122,7 @@ def page_down():
 
 def main():
     check_directory()
-    __init__()
+    create_widgets()
 
     # ========= создание всех кнопок ===================
     show_objects(button_frame, obj_on_page[0], search)

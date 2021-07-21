@@ -8,11 +8,11 @@ import os
 import sys
 
 
-def page_distribution(user_input=''):
-    """возвращет вложенный спиок с
+def page_distribution(user_input='') -> list:
+    """Возвращет вложенный спиок с
      распределенными объектами списока arr по сраницам
      (на одной странице 12 обектов)"""
-    arr = os.listdir("data")
+    arr = os.listdir("resources/data")
     page = 0
     obj_on_page = []
     while arr:
@@ -31,8 +31,8 @@ def page_distribution(user_input=''):
     return obj_on_page
 
 
-def show_objects(root, arr, update_func):
-    """выводит обекты из списка arr на экран"""
+def show_objects(root, arr: list, update_func):
+    """Выводит обекты из списка arr на экран"""
     i = 0
     for file in arr:
         if file:
@@ -40,11 +40,11 @@ def show_objects(root, arr, update_func):
                 note = Note(loading(file[:-5]), update_func)
                 note.add_button(root).grid(row=i // 4, column=i % 4)
             except EOFError:
-                os.remove(f"data/{file}")
+                os.remove(f"resources/data/{file}")  # удаляет этот файл
                 showwarning(title="Преупреждение", message="Внимение\nОбнаружен чужеродный файл, для корректоной работы программа перезапустится")
+                # перезапуск приложения
                 python = sys.executable
                 os.execl(python, python, *sys.argv)
-                continue
         else:
-            Button(root, relief=FLAT, width=20, height=10).grid(row=i // 4, column=i % 4)
+            Button(root, relief=FLAT, width=20, height=10).grid(row=i // 4, column=i % 4)  # создание пустой кнопки
         i += 1

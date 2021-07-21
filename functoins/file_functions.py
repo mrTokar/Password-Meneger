@@ -3,31 +3,31 @@ from pickle import dump, load
 from os import listdir, remove, mkdir
 
 
-def saving(arr:list):
-    # сохраняет информацию в именной файл
-    directory = f"data/{arr[0]}.data"
+def saving(arr: list):
+    """Cохраняет информацию в именной файл"""
+    directory = f"resources/data/{arr[0]}.data"
     with open(directory, "wb") as file:
         dump(arr, file)
 
 
-def loading(name:str):
-    # загружает информацию из именного файла
-    directory = f"data/{name}.data"
+def loading(name: str) -> list:
+    """Загружает информацию из именного файла"""
+    directory = f"resources/data/{name}.data"
     with open(directory, "rb") as file:
         return load(file)
 
 
 def check_directory():
-    # проверяет наличие нужных файлов
+    """Проверяет наличие нужных файлов"""
     try:
-        flag = True
-        for file in listdir("data"):
+        flag = True  # нет ни одного подходящего файла
+        for file in listdir("resources/data"):
             if file[-5:] == '.data':
-                flag = False
+                flag = False # уже есть хотя бы один подходящий файл
             else:
-                remove(f"data/{file}")
-        if flag:
+                remove(f"resources/data/{file}") # удаляем не нужный файл
+        if flag:  # если нет ни одного файла
             saving(["Example", "test@e-mail.com", "123456789", ""])
-    except FileNotFoundError:
-        mkdir("data")
+    except FileNotFoundError:  # если нет нужной дирректории
+        mkdir("resources/data")
         saving(["Example", "test@e-mail.com", "123456789", ""])
