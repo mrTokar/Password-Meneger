@@ -13,7 +13,7 @@ def create_widgets():
     obj_on_page = page_distribution()
     active_page = 1  # активная страница
 
-    main_window = Window(620,600)
+    main_window = Window(620, 600)
 
     # ============ виджеты поиска ========================
     search_frame = Frame(main_window.master)
@@ -98,7 +98,7 @@ def page_up():
     button_frame.destroy()
     button_frame = Frame(main_frame)
     button_frame.pack()
-    show_objects(button_frame, obj_on_page[active_page - 1])
+    show_objects(button_frame, obj_on_page[active_page - 1], search)
 
 
 def page_down():
@@ -117,7 +117,7 @@ def page_down():
     button_frame.destroy()
     button_frame = Frame(main_frame)
     button_frame.pack()
-    show_objects(button_frame, obj_on_page[active_page - 1])
+    show_objects(button_frame, obj_on_page[active_page - 1], search)
 
 
 def main():

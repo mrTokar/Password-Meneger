@@ -7,8 +7,8 @@ from tkinter.messagebox import askyesno
 from tkinter.filedialog import askopenfilename
 from PIL import Image as PilImage
 from PIL import ImageTk
-from functoins.file_functions import saving
-from os import remove, rename
+from functoins.file_functions import saving, check_image_file
+from os import remove, rename, mkdir
 import pyperclip as ppc
 from random import choice
 
@@ -35,7 +35,7 @@ class Window:
     def __init__(self, width: int, height: int, name="Password Manager"):
         self.master = Tk()
         self.master.title(name)
-        self.master.iconbitmap("resources/icon.ico")
+        self.master.iconbitmap("icon.ico")
         self.master.geometry(
             f"{width}x{height}+{self.master.winfo_screenwidth() // 2 - (width // 2)}+{self.master.winfo_screenheight() // 2 - (height // 2)}"
         )
@@ -57,7 +57,7 @@ class ChildWindow:
         А также базовый кнопки: close_btn и ok_btn(без привязки к функциям!)"""
         self.root = Toplevel(parent)
         self.root.title(name)
-        self.root.iconbitmap("resources/icon.ico")
+        self.root.iconbitmap("icon.ico")
         self.root.geometry(
             f"{width}x{height}+{self.root.winfo_screenwidth() // 2 - (width // 2)}+{self.root.winfo_screenheight() // 2 - (height // 2)}"
         )
@@ -88,8 +88,9 @@ class ChildWindow:
 class NoteWindow(ChildWindow):
     """Дочерний класс от класса ChildWindow. Конфигупрация виджетов для Note"""
 
-    def __init__(self, parent: Tk or Toplevel, width: int, height: int, name: str, resizeble=(False, False), **commands):
-        """Аргумент **commans должен ссылки на функции прявязаных к именам: del_command, ok_command, close_command, choose_command"""
+    def __init__(self, parent: Tk or Toplevel, width: int, height: int, name: str, resizeble=(False, False),
+                 **commands):
+        """Аргумент **commands должен ссылки на функции прявязаных к именам: del_command, ok_command, close_command, choose_command"""
         ChildWindow.__init__(self, parent, width, height, name, resizeble)
 
         # Коррекитровка нижних кнопок
@@ -130,19 +131,21 @@ class NoteWindow(ChildWindow):
         self.password_entry.pack(fill=X, padx=5, expand=True)
 
         Label(self.main_frame).pack(side=LEFT, padx=65)  # отступ
-        Button(self.main_frame, text="Выбрать иконку", command=commands['choose_command']).pack(side=LEFT)  # кнопка для выбора иконки
-        Buttons(self.main_frame, text='Сгенерировать пароль', command=self.open_generate_window).pack(side=LEFT, padx=10)  # кнопка для генерации пароля
+        Button(self.main_frame, text="Выбрать иконку", command=commands['choose_command']).pack(
+            side=LEFT)  # кнопка для выбора иконки
+        Buttons(self.main_frame, text='Сгенерировать пароль', command=self.open_generate_window).pack(side=LEFT,
+                                                                                                      padx=10)  # кнопка для генерации пароля
 
     def update_icon(self, dir_image: str or None):
         """Обновляет иконку. Показывает изображение находящееся по пути dir_image. \n
-        Если же в качетсве аргумента передан None, то будет отображаться resources/lock.png"""
+        Если же в качетсве аргумента передан None, то будет отображаться lock.png"""
         if dir_image:  # если изображение существует
             img = PilImage.open(dir_image)
             self.photoimage = ImageTk.PhotoImage(img)
-        else: # иначе загружаем картинку поумолчанию resources/lock.png
-            img = PilImage.open('resources/lock.png')
+        else:  # иначе загружаем картинку поумолчанию lock.png
+            img = PilImage.open('lock.png')
             self.photoimage = ImageTk.PhotoImage(img)
-        
+
         self.image_lbl.config(image=self.photoimage)  # отображение картинки
 
     def open_generate_window(self):
@@ -328,7 +331,7 @@ class Note:
     def __init__(self, arr: list, update_func):
         """инициализации объекта \n
          arr - спиок [name, nickname, password, icon] \n
-         update_func - ссылка на функцию searh()"""
+         update_func - ссылка на функцию search()"""
         self.name = arr[0]
         self.nickname = arr[1]
         self.password = arr[2]
@@ -341,10 +344,16 @@ class Note:
         self.master = master
         formed_name = self.formatted_name()
         if self.icon:
-            img = PilImage.open(self.icon)
-            self.photoimage = ImageTk.PhotoImage(img)
+            try:
+                check_image_file(self.icon)
+                img = PilImage.open(self.icon)
+                self.photoimage = ImageTk.PhotoImage(img)
+            except FileNotFoundError:
+                self.icon = None
+                img = PilImage.open('lock.png')
+                self.photoimage = ImageTk.PhotoImage(img)
         else:
-            img = PilImage.open('resources/lock.png')
+            img = PilImage.open('lock.png')
             self.photoimage = ImageTk.PhotoImage(img)
         btn = Buttons(master, text=formed_name, activebackground="#CCCCCC", relief=FLAT,
                       width=145, height=155, image=self.photoimage, compound=TOP, command=self.open_window)
@@ -367,7 +376,8 @@ class Note:
             # если объект новый, то удалить его нельзя
             self.password_window.disable_del_button()
             self.disable_del = False
-        self.password_window.insert_text(name=self.name, nickname=self.nickname, password=self.password)  # загрузка текста
+        self.password_window.insert_text(name=self.name, nickname=self.nickname,
+                                         password=self.password)  # загрузка текста
         self.password_window.grab_focus()  # запуск
 
     def formatted_name(self) -> str:
@@ -415,6 +425,7 @@ class Note:
         self.password = self.password_window.get_password()
         if self.icon:
             rename(self.icon, f"resources/images/{self.name}.png")
+            self.icon = f"resources/images/{self.name}.png"
         saving([self.name, self.nickname, self.password, self.icon])
         self.password_window.close_window()
         self.update_func()
@@ -422,18 +433,22 @@ class Note:
     def choose_icon(self):
         """Открывает диалоговое окно для выбора файла"""
         root = Tk()
-        root.iconbitmap("resources/icon.ico")
+        root.iconbitmap("icon.ico")
         root.withdraw()
         dir_image = askopenfilename(filetypes=(('All images', '*.png;*.jpg;*.jpeg;*.jpe;*JPG;*.gif;*.ico'),
-                                          ('PNG', '*.png'),
-                                          ('JPEG', '*.jpg;*.jpeg;*.jpe;*JPG'),
-                                          ('GIF', '*.gif'),
-                                          ('ICO', '*.ico')))
+                                               ('PNG', '*.png'),
+                                               ('JPEG', '*.jpg;*.jpeg;*.jpe;*JPG'),
+                                               ('GIF', '*.gif'),
+                                               ('ICO', '*.ico')))
         if dir_image != '':  # если окно не закрыли
             img = PilImage.open(dir_image)
-            img = img.resize((100,100), PilImage.ANTIALIAS)
+            img = img.resize((100, 100), PilImage.ANTIALIAS)
             name = 'noname' if self.name == '' else self.name
-            img.save(f'resources/images/{name}.png')
+            try:
+                img.save(f'resources/images/{name}.png')
+            except FileNotFoundError:
+                mkdir('resources/images')
+                img.save(f'resources/images/{name}.png')
             self.icon = f'resources/images/{name}.png'
             self.password_window.update_icon(self.icon)
 
@@ -445,7 +460,7 @@ class Note:
             remove(f"resources/data/{self.name}.data")
             try:
                 remove(f"resources/images/{self.name}.png")
-            except:
+            except FileNotFoundError:
                 pass
             self.password_window.close_window()
             self.update_func()
