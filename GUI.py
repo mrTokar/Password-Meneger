@@ -7,7 +7,7 @@ from tkinter.messagebox import askyesno
 from tkinter.filedialog import askopenfilename
 from PIL import Image as PilImage
 from PIL import ImageTk
-from functoins.file_functions import saving, check_image_file
+from functoins.file_functions import saving, check_image_file, resource_path
 from os import remove, rename, mkdir
 import pyperclip as ppc
 from random import choice
@@ -35,7 +35,7 @@ class Window:
     def __init__(self, width: int, height: int, name="Password Manager"):
         self.master = Tk()
         self.master.title(name)
-        self.master.iconbitmap("icon.ico")
+        self.master.iconbitmap(resource_path("resources/icon.ico"))
         self.master.geometry(
             f"{width}x{height}+{self.master.winfo_screenwidth() // 2 - (width // 2)}+{self.master.winfo_screenheight() // 2 - (height // 2)}"
         )
@@ -57,7 +57,7 @@ class ChildWindow:
         А также базовый кнопки: close_btn и ok_btn(без привязки к функциям!)"""
         self.root = Toplevel(parent)
         self.root.title(name)
-        self.root.iconbitmap("icon.ico")
+        self.root.iconbitmap(resource_path("resources/icon.ico"))
         self.root.geometry(
             f"{width}x{height}+{self.root.winfo_screenwidth() // 2 - (width // 2)}+{self.root.winfo_screenheight() // 2 - (height // 2)}"
         )
@@ -139,11 +139,11 @@ class NoteWindow(ChildWindow):
     def update_icon(self, dir_image: str or None):
         """Обновляет иконку. Показывает изображение находящееся по пути dir_image. \n
         Если же в качетсве аргумента передан None, то будет отображаться lock.png"""
-        if dir_image:  # если изображение существует
+        if dir_image:  # если путь к изображению существует
             img = PilImage.open(dir_image)
             self.photoimage = ImageTk.PhotoImage(img)
         else:  # иначе загружаем картинку поумолчанию lock.png
-            img = PilImage.open('lock.png')
+            img = PilImage.open(resource_path('resources/lock.png'))
             self.photoimage = ImageTk.PhotoImage(img)
 
         self.image_lbl.config(image=self.photoimage)  # отображение картинки
@@ -219,7 +219,7 @@ class GenerateWindow(ChildWindow):
         self.password_lbl.pack(pady=25)
 
         # Настройки длинны пароля
-        self.len_password = Scale(password_frame, length=150, orient=HORIZONTAL, from_=1, to=30, command=self.update)
+        self.len_password = Scale(password_frame, length=150, orient=HORIZONTAL, from_=4, to=30, command=self.update)
         self.len_password.set(12)
         self.len_password.pack()
 
@@ -350,10 +350,10 @@ class Note:
                 self.photoimage = ImageTk.PhotoImage(img)
             except FileNotFoundError:
                 self.icon = None
-                img = PilImage.open('lock.png')
+                img = PilImage.open(resource_path('resources/lock.png'))
                 self.photoimage = ImageTk.PhotoImage(img)
         else:
-            img = PilImage.open('lock.png')
+            img = PilImage.open(resource_path('resources/lock.png'))
             self.photoimage = ImageTk.PhotoImage(img)
         btn = Buttons(master, text=formed_name, activebackground="#CCCCCC", relief=FLAT,
                       width=145, height=155, image=self.photoimage, compound=TOP, command=self.open_window)
@@ -384,32 +384,13 @@ class Note:
         """Форматирует Note.name для корректного изображения на кнопке"""
         len_string = 0
         name = ''
-        last_word = self.name.split()[-1]
-        for word in self.name.split()[:-1]:
+        for word in self.name.split():
             len_string += len(word)
             if len_string <= 20:
                 name += word + ' '
             else:
                 len_string = len(word)
                 name += '\n' + word + ' '
-
-        if len(last_word) <= 20:
-            # если слово помещается целиком в 1 строку
-            len_string += len(last_word)
-            if len_string <= 20:
-                name += last_word
-            else:
-                len_string = len(last_word)
-                name += '\n' + last_word
-        else:
-            # инче каждый символ записываем поочереди и переносим строку когда та кончается
-            for symbol in last_word:
-                len_string += 1
-                if len_string <= 20:
-                    name += symbol
-                else:
-                    name += '\n' + symbol
-                    len_string = 1
 
         return name
 
@@ -433,7 +414,7 @@ class Note:
     def choose_icon(self):
         """Открывает диалоговое окно для выбора файла"""
         root = Tk()
-        root.iconbitmap("icon.ico")
+        root.iconbitmap(resource_path("resources/icon.ico"))
         root.withdraw()
         dir_image = askopenfilename(filetypes=(('All images', '*.png;*.jpg;*.jpeg;*.jpe;*JPG;*.gif;*.ico'),
                                                ('PNG', '*.png'),

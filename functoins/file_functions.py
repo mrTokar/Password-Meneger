@@ -1,7 +1,8 @@
 """Содержит функции связанные с работой с файлами: saving и loading, check_directory"""
 from pickle import dump, load
-from os import listdir, remove, mkdir
+from os import listdir, remove, mkdir, path
 from PIL import Image
+import sys
 
 
 def saving(arr: list):
@@ -50,3 +51,14 @@ def check_directory():
                 remove(f'resources/images{file}')
     except FileNotFoundError:  # если нет нужной дирректории
         mkdir('resources/images')
+
+
+def resource_path(relative_path: str):
+    """Получает и возвращает абсолютный путь к ресурсу"""
+    try:
+        # PyInstaller создает временную папку и сохраняет путь в _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = path.abspath(".")
+
+    return path.join(base_path, relative_path)
