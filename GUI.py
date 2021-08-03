@@ -2,15 +2,16 @@
 
 from tkinter import Tk, Button, Entry, Label, Frame
 from tkinter import Toplevel, Checkbutton, IntVar, Radiobutton, Scale, StringVar
-from tkinter.constants import TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT
-from tkinter.messagebox import askyesno
+from tkinter.constants import TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT, BOTTOM
+from tkinter.messagebox import askyesno, showwarning
 from tkinter.filedialog import askopenfilename
 from PIL import Image as PilImage
 from PIL import ImageTk
-from functoins.file_functions import saving, check_image_file, resource_path
-from os import remove, rename, mkdir
-import pyperclip as ppc
+from file_functions import saving, check_image_file, resource_path, loading, page_distribution
 from random import choice
+import pyperclip as ppc
+import os
+import sys
 
 state_past = False  # переменная состояния для корректного копирования в password_entry
 
@@ -30,9 +31,9 @@ class Buttons(Button):
 
 
 class Window:
-    """Класс главного окна"""
+    """Класс окна. (Трофарет)"""
 
-    def __init__(self, width: int, height: int, name="Password Manager"):
+    def __init__(self, width: int, height: int, name):
         self.master = Tk()
         self.master.title(name)
         self.master.iconbitmap(resource_path("resources/icon.ico"))
@@ -44,6 +45,134 @@ class Window:
     def run(self):
         """Открывает окно"""
         self.master.mainloop()
+
+
+class MainWindow(Window):
+    """Класс главного окна."""
+    def __init__(self, width: int, height: int, name="Password Manager"):
+        super().__init__(width, height, name=name)
+        self.obj_on_page = page_distribution()
+        self.active_page = 1  # активная страница
+
+        # ============ виджеты поиска ========================
+        search_frame = Frame(self.master)
+        search_frame.pack(fill=X, padx=5, pady=15)
+
+        self.entry = Entry(search_frame)
+        self.entry.pack(fill=X, padx=5, expand=True)
+
+        # ============ копка Добавить =================
+        frame2 = Frame(self.master)  # рамка для кнопоки Добавить
+        frame2.pack(fill=X)
+
+        Buttons(frame2, text='Добавть новый пароль', command=self.add_new).pack(padx=5, pady=5, fill=X)
+
+        # ========= виджеты результата поиска ==========
+        self.main_frame = Frame(self.master)  # общая рамка для обектов и кнопок перелистывания
+        self.main_frame.pack(fill=BOTH, expand=True)
+
+        self.button_frame = Frame(self.main_frame)  # рамка для объектов
+        self.button_frame.pack()
+
+        status_frame = Frame(self.main_frame)  # рамка для отображения активной страницы и кнопок перемотки
+        status_frame.pack(side=BOTTOM, padx=100, pady=5)
+
+        self.next_btn = Buttons(status_frame, text="Далее >", command=self.page_up)
+        self.next_btn.pack(side=RIGHT, padx=5)
+        if self.active_page == len(self.obj_on_page):
+            self.next_btn.disable()
+
+        self.status = Label(status_frame, text=f"Стриница 1 из {len(self.obj_on_page)}")
+        self.status.pack(sid=RIGHT)
+
+        self.back_btn = Buttons(status_frame, text="< Назад", command=self.page_down)
+        self.back_btn.pack(side=RIGHT, padx=5)
+        self.back_btn.disable()
+
+        self.master.bind("<Key>", self.search)
+
+    def search(self, event=None):
+        """Выводит все объекты удовлетворяющий введеной строке в поле Entry\n
+        event - своеобразная заглушка для привязки к Enter"""
+
+        obj_on_page = page_distribution(user_input=self.entry.get())
+
+        # =========== корректировка вывода =====================
+        self.button_frame.destroy()
+        self.button_frame = Frame(self.main_frame)
+        self.button_frame.pack()
+        self.show_objects(obj_on_page[0])
+
+        active_page = 1
+        self.status.config(text=f"Страница {active_page} из {len(obj_on_page)}")
+        self.back_btn.disable()  # кнопка назад
+        if active_page == len(obj_on_page):  # кнопка далее
+            self.next_btn.disable()
+        else:
+            self.next_btn.enable()
+
+    def add_new(self):
+        """Добавляет новый обект"""
+        new = Note(['', '', '', None], self.search)
+        new.open_window(master=self.master)
+
+    def page_up(self):
+        """Перелистывает на следующую страницу"""
+        # ================= корректировка нижней строчки ==================
+        self.active_page += 1
+        self.status.config(text=f"Страница {self.active_page} из {len(self.obj_on_page)}")
+
+        # кнопка далее
+        if self.active_page == len(self.obj_on_page):
+            self.next_btn.disable()
+        else:
+            self.next_btn.enable()
+
+        self.back_btn.enable()  # кнопка назад
+        self.button_frame.destroy()
+        self.button_frame = Frame(self.main_frame)
+        self.button_frame.pack()
+        self.show_objects(self.obj_on_page[self.active_page - 1])
+
+    def page_down(self):
+        """Перелистывает на страницу назад"""
+        # ================= корректировка нижней строчки ==================
+        self.active_page -= 1
+        self.status.config(text=f"Страница {self.active_page} из {len(self.obj_on_page)}")
+
+        self.next_btn.enable()  # кнопка далее
+        # кнопка назад
+        if self.active_page == 1:
+            self.back_btn.disable()
+        else:
+            self.back_btn.enable()
+        self.button_frame.destroy()
+        self.button_frame = Frame(self.main_frame)
+        self.button_frame.pack()
+        self.show_objects(self.obj_on_page[self.active_page - 1])
+
+    def start_show(self):
+        """Выводит запси на первой странице"""
+        self.show_objects(self.obj_on_page[0])
+
+    def show_objects(self, arr: list):
+        """Выводит обекты из списка arr на экран"""
+        i = 0
+        for file in arr:
+            if file:
+                try:
+                    note = Note(loading(file[:-5]), self.search)
+                    note.add_button(self.button_frame).grid(row=i // 4, column=i % 4)
+                except EOFError:
+                    os.remove(f"resources/data/{file}")  # удаляет этот файл
+                    showwarning(title="Преупреждение", message="Внимение\nОбнаружен чужеродный файл, для корректоной работы программа перезапустится")
+                    # перезапуск приложения
+                    python = sys.executable
+                    os.execl(python, python, *sys.argv)
+            else:
+                Buttons(self.button_frame, relief=FLAT, width=20,
+                        height=10).grid(row=i // 4, column=i % 4)  # создание пустой кнопки
+            i += 1
 
 
 class ChildWindow:
@@ -398,14 +527,14 @@ class Note:
         """Сохраняет данные"""
         if self.name != self.password_window.get_name():
             try:
-                remove(f"resources/data/{self.name}.data")
+                os.remove(f"resources/data/{self.name}.data")
                 self.name = self.password_window.get_name()
             except FileNotFoundError:
                 self.name = self.password_window.get_name()
         self.nickname = self.password_window.get_nickname()
         self.password = self.password_window.get_password()
         if self.icon:
-            rename(self.icon, f"resources/images/{self.name}.png")
+            os.rename(self.icon, f"resources/images/{self.name}.png")
             self.icon = f"resources/images/{self.name}.png"
         saving([self.name, self.nickname, self.password, self.icon])
         self.password_window.close_window()
@@ -428,7 +557,7 @@ class Note:
             try:
                 img.save(f'resources/images/{name}.png')
             except FileNotFoundError:
-                mkdir('resources/images')
+                os.mkdir('resources/images')
                 img.save(f'resources/images/{name}.png')
             self.icon = f'resources/images/{name}.png'
             self.password_window.update_icon(self.icon)
@@ -438,9 +567,9 @@ class Note:
         answer = askyesno(title="Потверждение удаления",
                           message=f"Вы действительно хотите безвозратно удалить пароль от {self.name}?")
         if answer:
-            remove(f"resources/data/{self.name}.data")
+            os.remove(f"resources/data/{self.name}.data")
             try:
-                remove(f"resources/images/{self.name}.png")
+                os.remove(f"resources/images/{self.name}.png")
             except FileNotFoundError:
                 pass
             self.password_window.close_window()
