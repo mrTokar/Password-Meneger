@@ -4,6 +4,8 @@ import os
 from pickle import dump, load
 from os import listdir, remove, mkdir, path, urandom
 from PIL import Image
+from win32api import SetFileAttributes
+from win32con import FILE_ATTRIBUTE_HIDDEN
 import sys
 from hashlib import pbkdf2_hmac
 
@@ -14,19 +16,21 @@ def saving(arr: list, login: str):
     with open(directory, "wb") as file:
         dump(arr, file)
 
+
 def saving_hased_password(key: bytes, salt: bytes, login: str):
     """Сохраняет кортеж (key, salt) в папку ползователя"""
-    directory = f"resources/__HASHEDPASSWORD__/__{login.upper()}__.data"
+    directory = f"resources/__HASHEDPASSWORD__/__{login}__.data"
     try:
         with open(directory, "wb") as file:
             dump((key, salt), file)
-        return None  # служит в качестве breake
+        return  # служит в качестве breake
     except FileNotFoundError:
         try:
             os.mkdir("resources/__HASHEDPASSWORD__")
         except FileNotFoundError:
             os.mkdir("resources")
             os.mkdir("resources/__HASHEDPASSWORD__")
+            SetFileAttributes("resources", FILE_ATTRIBUTE_HIDDEN)
     with open(directory, "wb") as file:
         dump((key, salt), file)
 

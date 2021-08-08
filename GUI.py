@@ -196,7 +196,7 @@ class MainWindow(Window):
         frame2 = Frame(self.master)  # рамка для кнопоки Добавить
         frame2.pack(fill=X)
 
-        Buttons(frame2, text='Добавть новый пароль', relief=GROOVE,
+        Buttons(frame2, text='Добавить новый пароль', relief=GROOVE,
                 command=self.add_new).pack(padx=5, pady=5, fill=X)
 
         # ========= виджеты результата поиска ==========
@@ -230,18 +230,18 @@ class MainWindow(Window):
         """Выводит все объекты удовлетворяющий введеной строке в поле Entry\n
         event - своеобразная заглушка для привязки к Enter"""
         filter = self.entry.get() if self.entry.get() != "Поиск..." else ""
-        obj_on_page = func.page_distribution(filter, self.login)
+        self.obj_on_page = func.page_distribution(filter, self.login)
 
         # =========== корректировка вывода =====================
         self.button_frame.destroy()
         self.button_frame = Frame(self.main_frame)
         self.button_frame.pack()
-        self.show_objects(obj_on_page[0])
+        self.show_objects(self.obj_on_page[0])
 
-        active_page = 1
-        self.status.config(text=f"Страница {active_page} из {len(obj_on_page)}")
+        self.active_page = 1
+        self.status.config(text=f"Страница {self.active_page} из {len(self.obj_on_page)}")
         self.back_btn.disable()  # кнопка назад
-        if active_page == len(obj_on_page):  # кнопка далее
+        if self.active_page == len(self.obj_on_page):  # кнопка далее
             self.next_btn.disable()
         else:
             self.next_btn.enable()
