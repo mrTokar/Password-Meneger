@@ -10,7 +10,7 @@ from PIL import Image as PilImage
 from PIL import ImageTk
 from random import choice
 import file_functions as func
-from db import DB_hash
+from db import DB_hash, DB
 import pyperclip as ppc
 import os
 import sys
@@ -155,7 +155,7 @@ class LoginWindow(Window):
             showwarning(title="Внимание", message="Оба поля ввода должны быть заполнены")
 
     def get_login(self):
-        """Возвращает login (папку где сохранены парли пользоваетеля)"""
+        """Возвращает login (таблицу где сохранены парли пользоваетеля)"""
         return self.login
 
     def stop_program(self):
@@ -180,10 +180,10 @@ class LoginWindow(Window):
 class MainWindow(Window):
     """Класс главного окна."""
     def __init__(self, login):
-        """login - папка пользователя"""
-        self.login = login
+        """login - таблица пользователя"""
+        self.login = DB(login) # подключение к аккаунту пользователя
         super().__init__(620, 610, "Password Manager")
-        self.obj_on_page = func.page_distribution('', self.login)
+        self.obj_on_page = self.login.load_all_name()
         self.active_page = 1  # активная страница
 
         # ============ виджеты поиска ========================
@@ -232,7 +232,7 @@ class MainWindow(Window):
         """Выводит все объекты удовлетворяющий введеной строке в поле Entry\n
         event - своеобразная заглушка для привязки к Enter"""
         filter = self.entry.get() if self.entry.get() != "Поиск..." else ""
-        self.obj_on_page = func.page_distribution(filter, self.login)
+        self.obj_on_page = self.login.load_all_name(filter)
 
         # =========== корректировка вывода =====================
         self.button_frame.destroy()
@@ -297,18 +297,13 @@ class MainWindow(Window):
         i = 0
         for file in arr:
             if file:
-                try:
-                    note = Note(func.loading(file[:-5], self.login), self.search, self.login)
-                    note.add_button(self.button_frame).grid(row=i // 4, column=i % 4)
-                except EOFError:
-                    os.remove(f"resources/data/{self.login}/{file}")  # удаляет этот файл
-                    showwarning(title="Преупреждение", message="Внимение\nОбнаружен чужеродный файл, для корректоной работы программа перезапустится")
-                    # перезапуск приложения
-                    python = sys.executable
-                    os.execl(python, python, *sys.argv)
+                note = Note(self.login.load(file), self.search, self.login)
+                note.add_button(self.button_frame).grid(row=i // 4, column=i % 4)
             else:
-                Buttons(self.button_frame, relief=FLAT, width=20,
-                        height=10).grid(row=i // 4, column=i % 4)  # создание пустой кнопки
+                b = Buttons(self.button_frame, relief=FLAT, width=20,
+                        height=10) # создание пустой кнопки
+                b.disable()
+                b.grid(row=i // 4, column=i % 4)
             i += 1
 
     def focusinentry(self, event):
@@ -669,11 +664,11 @@ class Note:
     """Класс обектов содержащих все записи. Имеет методы для создания окна содержащего всю информацию
     и для добавления кнопки этой записи на главное окошко"""
 
-    def __init__(self, arr: list, update_func, login):
+    def __init__(self, arr: list, update_func, login: DB):
         """инициализации объекта \n
          arr - спиок [name, nickname, password, icon] \n
-         update_func - ссылка на функцию search()
-         login - пользователь"""
+         update_func - ссылка на функцию search() \n
+         login - таблица пользователя"""
         self.name = arr[0]
         self.nickname = arr[1]
         self.password = arr[2]
@@ -681,6 +676,7 @@ class Note:
         self.disable_del = False
         self.update_func = update_func
         self.login = login
+        self.dir_to_imgcatalog = f'resources/images/{self.login.get_table()}/'
 
     def add_button(self, master: Tk) -> Buttons:
         """Добавляет инонку записи в окно. И возвращает данную кнопку"""
@@ -740,17 +736,14 @@ class Note:
     def save_note(self):
         """Сохраняет данные"""
         if self.name != self.password_window.get_name():
-            try:
-                os.remove(f"resources/data/{self.login}/{self.name}.data")
-                self.name = self.password_window.get_name()
-            except FileNotFoundError:
-                self.name = self.password_window.get_name()
+            self.login.delete_note(self.name)
+            self.name = self.password_window.get_name()
         self.nickname = self.password_window.get_nickname()
         self.password = self.password_window.get_password()
         if self.icon:
-            os.rename(self.icon, f"resources/images/{self.login}/{self.name}.png")
-            self.icon = f"resources/images/{self.login}/{self.name}.png"
-        func.saving([self.name, self.nickname, self.password, self.icon], self.login)
+            os.rename(self.icon, self.dir_to_imgcatalog + f"{self.name}.png")
+            self.icon = self.dir_to_imgcatalog + f"{self.name}.png"
+        self.login.save([self.name, self.nickname, self.password, self.icon])
         self.password_window.close_window()
         self.update_func()
 
@@ -763,22 +756,22 @@ class Note:
                                                ('PNG', '*.png'),
                                                ('JPEG', '*.jpg;*.jpeg;*.jpe;*JPG'),
                                                ('GIF', '*.gif'),
-                                               ('ICO', '*.ico')))
+                                               ('SVG', '*.svg')))
         if dir_image != '':  # если окно не закрыли
             img = PilImage.open(dir_image)
             img = img.resize((100, 100), PilImage.ANTIALIAS)
             name = 'noname' if self.name == '' else self.name
             try:
-                img.save(f'resources/images/{self.login}/{name}.png')
+                img.save(self.dir_to_imgcatalog + f'/{name}.png')
             except FileNotFoundError:
                 try:
-                    os.mkdir(f'resources/images/{self.login}')
-                    img.save(f'resources/images/{self.login}/{name}.png')
+                    os.mkdir(self.dir_to_imgcatalog)
+                    img.save(self.dir_to_imgcatalog + f'{name}.png')
                 except FileNotFoundError:
                     os.mkdir(f'resources/images')
-                    os.mkdir(f'resources/images/{self.login}')
-                    img.save(f'resources/images/{self.login}/{name}.png')
-            self.icon = f'resources/images/{self.login}/{name}.png'
+                    os.mkdir(self.dir_to_imgcatalog)
+                    img.save(self.dir_to_imgcatalog + f'{name}.png')
+            self.icon = self.dir_to_imgcatalog + f'{name}.png'
             self.password_window.update_icon(self.icon)
 
     def del_note(self):
@@ -786,9 +779,9 @@ class Note:
         answer = askyesno(title="Потверждение удаления",
                           message=f"Вы действительно хотите безвозратно удалить пароль от {self.name}?")
         if answer:
-            os.remove(f"resources/data/{self.login}/{self.name}.data")
+            self.login.delete_note(self.name)
             try:
-                os.remove(f"resources/images/{self.login}/{self.name}.png")
+                os.remove(self.dir_to_imgcatalog + f"{self.name}.png")
             except FileNotFoundError:
                 pass
             self.password_window.close_window()
@@ -796,9 +789,9 @@ class Note:
 
     def close_note(self):
         """Вызывает уточняющий messagebox если новые изменения не сохранены."""
-        check_name = self.name == self.password_window.get_name()
-        check_nickname = self.nickname == self.password_window.get_nickname()
-        check_password = self.password == self.password_window.get_password()
+        check_name = (self.name == self.password_window.get_name())
+        check_nickname = (self.nickname == self.password_window.get_nickname())
+        check_password = (self.password == self.password_window.get_password())
         if check_name and check_nickname and check_password:
             self.password_window.close_window()
         else:

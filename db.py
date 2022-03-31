@@ -3,26 +3,31 @@ import sqlite3
 
 class DB:
 
-    def __init__(self, table):
-        if os.path.isdir('sources'): 
-            "Если в данной дирректории есть папка sources"
+    def __init__(self, table: str):
+        """table - нужная таблица (пользователь)"""
+        if os.path.isdir('resources'): 
+            "Если в данной дирректории есть папка resources"
 
-            if "data.db" not in os.listdir("sources"):
-                file = open("sources\\data.db", "w+")
+            if "data.db" not in os.listdir("resources"):
+                file = open("resources\\data.db", "w+")
                 file.close()
         else:
-            os.mkdir("sources")
-            file = open("sources\\data.db", "w+")
+            os.mkdir("resources")
+            file = open("resources\\data.db", "w+")
             file.close()
         self.connect_db()
 
         self.table = table
         self.check_table()
 
+    def get_table(self):
+        """Возвращает назвавние подключенной таблицы"""
+        return self.table
+
     def connect_db(self):
         "Подключение к БД"
 
-        self.connection = sqlite3.connect("sources\\data.db", check_same_thread=False)
+        self.connection = sqlite3.connect("resources\\data.db", check_same_thread=False)
         self.cursor = self.connection.cursor()
 
     def connection_close(self):
@@ -60,12 +65,24 @@ class DB:
             if note[0] == key:
                 return list(map(str, note))
 
-    def load_all_name(self) -> list:
-        """Возвращает все записи из таблицы нужной таблицы."""
+    def load_all_name(self, filter='') -> list:
+        """Возвращает все запис включяющие в себя фильтр из таблицы нужной таблицы. \n
+        filter - фильр, по котром производиться поиск"""
 
         self.cursor.execute('SELECT * FROM {}'.format(self.table))
         rows = self.cursor.fetchall()
-        return [note[0] for note in rows]
+        arr = [note[0] for note in rows]
+        obj_on_page = []
+        for page in range(len(arr)//12 + 1): 
+            obj_on_page.append([])
+            for _ in range(12):
+                if arr:
+                    item = arr.pop(0)
+                    if (filter.lower() in item.lower()):
+                        obj_on_page[page].append(item)
+                        continue
+                obj_on_page[page].append(None)
+        return obj_on_page
 
     def save(self, arr: list):
         """Сохранение списка arr [name, nickname, password, icon].
@@ -78,7 +95,7 @@ class DB:
             keys.append(i[1])
         keys = ", ".join(keys)
 
-        string = lambda x: "'" + x + "'"
+        string = lambda x: '"' + x + '"' if x is not None else '"default"'
         vaules = ', '.join(list(map(string, arr)))
         
         operation = (f'INSERT or REPLACE into {self.table} ({keys}) VALUES ({vaules})')
@@ -133,15 +150,15 @@ class DB:
 class DB_hash:
 
     def __init__(self):
-        if os.path.isdir('sources'): 
-            "Если в данной дирректории есть папка sources"
+        if os.path.isdir('resources'): 
+            "Если в данной дирректории есть папка resources"
 
-            if "hashedpasswords.db" not in os.listdir("sources"):
-                file = open("sources\\hashedpasswords.db", "w+")
+            if "hashedpasswords.db" not in os.listdir("resources"):
+                file = open("resources\\hashedpasswords.db", "w+")
                 file.close()
         else:
-            os.mkdir("sources")
-            file = open("sources\\hashedpasswords.db", "w+")
+            os.mkdir("resources")
+            file = open("resources\\hashedpasswords.db", "w+")
             file.close()
         self.connect_db()
         self.check_table()
@@ -149,7 +166,7 @@ class DB_hash:
     def connect_db(self):
         "Подключение к БД"
 
-        self.connection = sqlite3.connect("sources\\hashedpasswords.db", check_same_thread=False)
+        self.connection = sqlite3.connect("resources\\hashedpasswords.db", check_same_thread=False)
         self.cursor = self.connection.cursor()
 
     def connection_close(self):
