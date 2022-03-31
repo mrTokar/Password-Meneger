@@ -10,6 +10,7 @@ from PIL import Image as PilImage
 from PIL import ImageTk
 from random import choice
 import file_functions as func
+from db import DB_hash
 import pyperclip as ppc
 import os
 import sys
@@ -123,6 +124,7 @@ class LoginWindow(Window):
         self.master.protocol("WM_DELETE_WINDOW", self.stop_program)
         self.master.bind("<Return>", self.log_in)
         self.master.bind("<Key>", self.on_bind)  # подключение горячик клавиш
+        self.db = DB_hash()
 
     def create_new(self):
         """Создает новый аккунт, по данным из полей ввода."""
@@ -130,7 +132,7 @@ class LoginWindow(Window):
         if self.login != '' and \
                 self.password_entry.get() != '':  # если заполены все поля ввода
             key, salt = func.hash_password(self.password_entry.get())  # хеширование введенного пароля  
-            func.saving_hased_password(key, salt, self.login)  # сохранение ключа и соли
+            self.db.saving(self.login, key, salt)  # сохранение ключа и соли
             self.master.destroy()  # выходим из этого окна
         else:  # иначне выходим выводим предупреждение о том что заполнены не все поля 
             showwarning(title="Внимание", message="Оба поля ввода должны быть заполнены")
@@ -141,13 +143,13 @@ class LoginWindow(Window):
         self.login = self.login_entry.get()  # получает логин
         if self.login != '' and self.password_entry.get() != '':  # если введено все поля ввода
             try:  # пытаемся загрузить ключ и сольь
-                true_key, salt = func.loading_hashed_password(self.login)  # загрузка из памяти ключа и соли
+                true_key, salt = self.db.load(self.login)  # загрузка из памяти ключа и соли
                 new_key, salt = func.hash_password(self.password_entry.get(), salt)  # хеширование введнного пароля по загруженной соли 
                 if new_key == true_key:  # если введен паравильный пароль
                     self.master.destroy()  # выходим из этого окна
                 else:  # иначе выводим предупреждение о том что неверный пароль
                     showwarning(title="Внимание", message="Неверный пароль")
-            except FileNotFoundError:
+            except TypeError:
                 showwarning(title="Внимание", message="Пользователь не найден")
         else:  # иначе выводим предупреждение о том что заполенены не все поля ввода 
             showwarning(title="Внимание", message="Оба поля ввода должны быть заполнены")

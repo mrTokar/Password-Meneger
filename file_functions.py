@@ -8,6 +8,7 @@ from win32api import SetFileAttributes
 from win32con import FILE_ATTRIBUTE_HIDDEN
 import sys
 from hashlib import pbkdf2_hmac
+from db import DB_hash
 
 
 def saving(arr: list, login: str):
@@ -128,8 +129,12 @@ def page_distribution(user_input: str, login: str) -> list:
 
 
 def hash_password(password: str, salt=None):
-    """Хеширует пароль и возвращает ключ с солью"""
+    """Хеширует пароль и возвращает ключ с солью в 16-ричной системе. \n
+    Аргумент salt передается набором байтов в 16-ричной систсеме,
+    при этом пароль будет хешироваться по переданной соли, иначе сгенрерирует новую"""
     if not salt:
         salt = urandom(32)
+    else:
+        salt = bytes.fromhex(salt)
     key = pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
-    return key, salt
+    return key.hex(), salt.hex() 
