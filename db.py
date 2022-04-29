@@ -184,26 +184,28 @@ class DB_hash:
             if self.connection is not None:
                 return True
 
-    def saving(self, login: str, key: str, salt: str):
-        """Cохраняет ключ и соль для пользоваетля \n
+    def saving(self, login: str, key: str, salt: str, color: str):
+        """Cохраняет новго пользоваетля \n
         login - нужный пользователь \n
         key - сохраняемый ключ \n
-        salt - сохраняемая соль"""
+        salt - сохраняемая соль \n
+        color - ответ на спец вопрос"""
 
+        color = color.strip().lower()  # подгонка под один стиль
         info_cells = list(self.cursor.execute("PRAGMA table_info(hash);"))
         keys =[]
         for i in info_cells:
             keys.append(i[1])
         keys = ", ".join(keys)
 
-        vaules = f"\"{login}\", \"{str(key)}\", \"{str(salt)}\""
+        vaules = f"\"{login}\", \"{str(key)}\", \"{str(salt)}\", \"{color}\""
         
         operation = (f'INSERT or REPLACE into hash ({keys}) VALUES ({vaules})')
         self.cursor.execute(operation)
         self.connection.commit()
 
     def load(self, login: str) -> tuple or None:
-        """Возвращает (key, salt) из БД. Если записи не существует возвращает None \n
+        """Возвращает данные о пользователе из БД. Если записи не существует возвращает None \n
         login - нужный пользователь, по котрому нужно загрузить кортеж"""
 
         self.cursor.execute('SELECT * FROM hash')
@@ -213,14 +215,15 @@ class DB_hash:
         for note in rows:
             if note[0] == login:
                 return note[1:]
+        return None
 
     def create_new_table(self):
         """Создание таблицы в БД (в случае ее отсутствия)"""
 
         if self.check_connection():
 
-            len_cells = 3
-            name_of_cells = ['login', 'key', 'salt']
+            len_cells = 4
+            name_of_cells = ['login', 'key', 'salt', 'color']
             key = 0
             cells = ''
 

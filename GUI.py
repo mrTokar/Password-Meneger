@@ -1,10 +1,12 @@
 """Содержит классы связанные с GUI приложения: Note, Window, ChildWindow, NoteWindow, Buttons"""
 
-from tkinter import TclError, Tk, Button, Entry, Label, Frame
+
+from tkinter import N, S, SOLID, Y, TclError, Tk, Button, Entry, Label, Frame, Canvas
 from tkinter import Toplevel, Checkbutton, IntVar, Radiobutton, Scale, StringVar
 from tkinter.constants import END, INSERT, SEL_FIRST, SEL_LAST, TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT, BOTTOM, GROOVE
 from tkinter.messagebox import askyesno, showwarning
 from tkinter.filedialog import askopenfilename
+from matplotlib.pyplot import show
 from win32api import GetKeyboardLayout, LoadKeyboardLayout
 from PIL import Image as PilImage
 from PIL import ImageTk
@@ -108,7 +110,7 @@ class LoginWindow(Window):
         self.create_btn = Buttons(self.button_frame, text="Создать новый аккаунт", command=self.create_new)
         self.create_btn.pack(side=RIGHT, padx=15)
 
-        Label(main_frame, text="Password Manager", font=('Arial', 24)).pack()
+        Label(main_frame, text="PassMan", font=('Arial', 24)).pack()
         Label(main_frame, text="Авторизуйтесь").pack(pady=20)
         login_frame = Frame(main_frame)
         login_frame.pack(padx=20)
@@ -182,7 +184,7 @@ class MainWindow(Window):
     def __init__(self, login):
         """login - таблица пользователя"""
         self.login = DB(login) # подключение к аккаунту пользователя
-        super().__init__(620, 610, "Password Manager")
+        super().__init__(620, 610, "Passman")
         self.obj_on_page = self.login.load_all_name()
         self.active_page = 1  # активная страница
 
@@ -339,9 +341,9 @@ class MainWindow(Window):
 class ChildWindow:
     """Класс дочерних окон."""
 
-    def __init__(self, parent: Tk or Toplevel, width: int, height: int, name: str):
+    def __init__(self, parent: Tk or Toplevel, width: int, height: int, name="Passman"):
         """Создает дочернее окно от аргумента parent.
-        При инициализации имеет аргумент по умаолчанию name='Password Manager'
+        При инициализации имеет аргумент по умаолчанию name='Passman'
         Сразу установлены размеры окна и иконка. Фокусировка перелючается на данное окно.
         Автоматически создается 2 пространтсва: Освновное и для нижних кнопок.
         А также базовый кнопки: close_btn и ok_btn(без привязки к функциям!)"""
@@ -360,13 +362,16 @@ class ChildWindow:
         # простнранство всех нижних кнопок
         self.button_frame = Frame(self.root)
         self.button_frame.pack(fill=X, expand=False)
-        Label(self.button_frame).pack(side=RIGHT, padx=70)  # заглушка чтобы кнопки были по середине
 
         self.close_btn = Buttons(self.button_frame, text="Закрыть")
-        self.close_btn.pack(side=RIGHT, pady=10, padx=15)
+        self.ok_btn = Buttons(self.button_frame, text="Ок", activebackground='#63DB64')
 
-        self.ok_btn = Buttons(self.button_frame, text="Ок", activebackground='#63DB64', )
+    def set_defualt_button(self):
+        """Устанавливает кнопки Ок и Закрыть по деволтным настройкам"""
+        Label(self.button_frame).pack(side=RIGHT, padx=70)  # заглушка чтобы кнопки были по середине
+        self.close_btn.pack(side=RIGHT, pady=10, padx=15)
         self.ok_btn.pack(side=RIGHT, padx=15)
+
 
     def grab_focus(self):
         """Захватывает фокус на создавшееся окно"""
@@ -406,6 +411,24 @@ class ChildWindow:
             except TclError:
                 pass
 
+    def close_window(self):
+        """Закрывает окно"""
+        self.root.destroy()
+
+    def on_bind(self, event):
+        """Вызывается при нажатии любой клавиши. Если это горячие сочетания,
+         то вызывает эту функцию."""
+        if (event.state & 4 > 0):
+            symbol = chr(event.keycode)
+            if symbol == "A":
+                self.selectall_rus(event)
+            elif symbol == "X":
+                self.cut_rus(event)
+            elif symbol == "C":
+                self.copy_rus(event)
+            elif symbol == "V":
+                self.past_rus(event)
+
 
 class NoteWindow(ChildWindow):
     """Дочерний класс от класса ChildWindow. Конфигупрация виджетов для Note"""
@@ -415,12 +438,13 @@ class NoteWindow(ChildWindow):
         ChildWindow.__init__(self, parent, 500, 325, name)
 
         # Коррекитровка нижних кнопок
+        self.set_defualt_button()  # Позицирование кнопок
+
         self.del_btn = Buttons(self.button_frame, text='Удалить',
                                activebackground='red', command=commands['del_command'])  # кнопка Удалить
         self.del_btn.pack(anchor=W, padx=15, pady=10)
 
         self.ok_btn.config(text="Сохранить", command=commands['ok_command'])  # кнопка Сохранить
-
         self.close_btn.config(command=commands['close_command'])  # кнопка Закрыть
 
         # иконка
@@ -513,24 +537,6 @@ class NoteWindow(ChildWindow):
         except KeyError:
             pass
 
-    def close_window(self):
-        """Закрывает окно"""
-        self.root.destroy()
-
-    def on_bind(self, event):
-        """Вызывается при нажатии любой клавиши. Если это горячие сочетания,
-         то вызывает эту функцию."""
-        if (event.state & 4 > 0):
-            symbol = chr(event.keycode)
-            if symbol == "A":
-                self.selectall_rus(event)
-            elif symbol == "X":
-                self.cut_rus(event)
-            elif symbol == "C":
-                self.copy_rus(event)
-            elif symbol == "V":
-                self.past_rus(event)
-
 
 class GenerateWindow(ChildWindow):
     """Дочерний класс от класса ChildWindow. Конфигупрация виджетов для GeneratePassword"""
@@ -539,6 +545,7 @@ class GenerateWindow(ChildWindow):
         ChildWindow.__init__(self, parent, 500, 300, "Generate Password")
 
         # корректировка нижгних кнопок
+        self.set_defualt_button()  # позицинирование кнопок
         self.ok_btn.config(text="Скоприровать и сохранить", command=self.copy_and_save)
         self.close_btn.config(command=self.root.destroy)
 
@@ -800,3 +807,94 @@ class Note:
             if answer:
                 self.password_window.close_window()
                 self.update_func()
+
+class CreateWindow(ChildWindow):
+    """Класс окошка для создания новго пользователя."""
+    def __init__(self, parent: Tk or Toplevel, database: DB_hash):
+        super().__init__(parent, 500, 400)
+        self.database = database
+        self.parent = parent
+
+        # Корректировка кнопок
+        Label(self.button_frame, pady=15).pack(anchor=W)  # Заглушка для отображения кнопок
+
+        self.del_btn = Buttons(self.button_frame, text='Удалить аккаунт',
+                               activebackground='red', command=self.open_DeleteWindow)  # кнопка Удалить
+        self.del_btn.place(x=140, y=10)
+
+        self.ok_btn= Buttons(self.main_frame,  text="Создать аккаунт", activebackground='#63DB64', command=self.create_new_ac)  # кнопка Сохранить
+        self.ok_btn.place(x=195, y=280)
+        
+        self.close_btn.place(x=280, y=10)
+        self.close_btn.config(command=self.close_window)  # кнопка Закрыть
+
+        Label(self.main_frame, text="PassMan", font=('Arial', 24)).pack()
+        Label(self.main_frame, text="Создание нового пользователя").pack(pady=20)
+        login_frame = Frame(self.main_frame)
+        login_frame.pack(padx=20)
+
+        Label(login_frame, text="Логин:").pack(anchor=W)
+        self.login_entry = Entry(login_frame, font=("Andale Mono", 10))
+        self.login_entry.pack(fill=X, anchor=W)
+
+        Label(login_frame, text="Пароль:").pack(anchor=W)
+        self.password_entry = Entry(login_frame, font=("Andale Mono", 10), show="*")
+        self.password_entry.pack(fill=X, anchor=W)
+
+        Label(login_frame, text="Повторите пароль:").pack(anchor=W)
+        self.repassword_entry = Entry(login_frame, font=("Andale Mono", 10), show="*")
+        self.repassword_entry.pack(fill=X, anchor=W)
+
+        Label(login_frame, text="Любимый цвет:").pack(anchor=W)
+        self.color_entry = Entry(login_frame, font=("Andale Mono", 10),validate="key")
+        self.color_entry.config(validatecommand=(self.color_entry.register(self.entery_filter), '%P', '%d'))
+        self.color_entry.pack(fill=X, anchor=W)
+
+        self.root.protocol("WM_DELETE_WINDOW", self.close_window)
+        self.root.bind("<Return>", self.create_new_ac)
+        self.root.bind("<Key>", self.on_bind)  # подключение горячик клавиш
+
+    def entery_filter(self, inStr, acttyp):
+        """"Функция орграничяения ввода. Разрешает вводить только буквы"""
+        if acttyp == '1':
+            if not inStr.isalpha():
+                return False
+        return True
+
+    def open_DeleteWindow(self):
+        """Some text"""
+        pass
+
+    def check_entry_parametrs(self) -> bool:
+        """Проверяет корректность введенных данных"""
+        login = self.login_entry.get()
+        password = self.password_entry.get()
+        repassword = self.repassword_entry.get()
+        color = self.color_entry.get()
+        
+        if not (login and password and repassword and color):
+            showwarning(title="Ошибка", message="Должны быть заполнены все поля")
+            return False
+
+        if self.database.load(login):
+            showwarning(title="Ошибка", message="Такой пользователь уже существует")
+            return False
+
+        if self.password_entry.get() != self.repassword_entry.get():
+            showwarning(title="Ошибка", message='Введенные пароли не совпадают')
+            return False
+        return True
+
+    def create_new_ac(self):
+        """Создает новый аккаунт по введеным данным."""
+        if self.check_entry_parametrs():
+            login = self.login_entry.get()
+            key,salt = func.hash_password(self.password_entry.get())  # хеширование введенного пароля
+            self.database.saving(login, key, salt, self.color_entry.get())  # сохранение данных
+            ppc.copy(login)  # Копрование логина
+            self.root.destroy()  # выходим из этого окна
+
+if __name__ == "__main__":
+    # ChildWindow(Tk(), 500, 300).grab_focus()
+    test = CreateWindow(Tk(), DB_hash())
+    test.grab_focus()
