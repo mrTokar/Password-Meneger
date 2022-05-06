@@ -1,21 +1,29 @@
 """Содержит классы связанные с GUI приложения: Note, Window, ChildWindow, NoteWindow, Buttons"""
 
-
+# tkinter
 from tkinter import N, S, SOLID, Y, TclError, Tk, Button, Entry, Label, Frame, Canvas
 from tkinter import Toplevel, Checkbutton, IntVar, Radiobutton, Scale, StringVar
 from tkinter.constants import END, INSERT, SEL_FIRST, SEL_LAST, TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT, BOTTOM, GROOVE
 from tkinter.messagebox import askyesno, showwarning
 from tkinter.filedialog import askopenfilename
-from matplotlib.pyplot import show
-from win32api import GetKeyboardLayout, LoadKeyboardLayout
+
+# PIL for tkinter
 from PIL import Image as PilImage
 from PIL import ImageTk
-from random import choice
-import file_functions as func
-from db import DB_hash, DB
-import pyperclip as ppc
+
+# system
+from win32api import GetKeyboardLayout, LoadKeyboardLayout
 import os
 import sys
+from ctypes import windll
+
+# other lib
+from random import choice
+import pyperclip as ppc
+
+# files
+import file_functions as func
+from db import DB_hash, DB
 
 state_past = False  # переменная состояния для корректного копирования в password_entry
 new_login = None
@@ -32,6 +40,31 @@ class Buttons(Button):
     def enable(self):
         """Включает кнопку"""
         self.config(state="normal")
+
+
+class Entries(Entry):
+    """Наследованный класс Entry с опреденными функциями копирования, вставки и т.д."""
+    def __init__(self, master=None, cnf={}, **kw):
+        super().__init__(master, kw)
+        self.bind("<Control-Key>", self.workcopy)
+
+    def workcopy(self, event):
+        """"Функция проверки и выполнения нужной команды"""
+        if self.is_ru_lang_keyboard():
+            if event.keycode==86:
+                event.widget.event_generate("<<Paste>>")
+            elif event.keycode==67: 
+                event.widget.event_generate("<<Copy>>")    
+            elif event.keycode==88: 
+                event.widget.event_generate("<<Cut>>")
+            elif event.keycode==65: 
+                event.widget.event_generate("<<SelectAll>>")
+
+    def is_ru_lang_keyboard(self) -> bool:
+        """Определение раскладки клавиатуры. Если ru возвращает True"""
+        u = windll.LoadLibrary("user32.dll")
+        pf = getattr(u, "GetKeyboardLayout")
+        return hex(pf(0)) == '0x4190419'
 
 
 class Window:
@@ -52,38 +85,6 @@ class Window:
         if self.first :
             LoadKeyboardLayout('00000409', 1)
             self.first = False
-
-    def copy_rus(self, event):
-        """Функция копирования. Активируется Ctrl+С"""
-        if isinstance(event.widget, Entry) and hex(GetKeyboardLayout()) != "0x4090409":
-            try:
-                ppc.copy(event.widget.selection_get())
-            except TclError:
-                pass
-
-    def selectall_rus(self, event):
-        """Функция выделения всего. Активируется Ctrl+Ф"""
-        if isinstance(event.widget, Entry) and hex(GetKeyboardLayout()) != "0x4090409":
-            self.master.after(10, lambda w: w.selection_range(0, END), event.widget)
-            event.widget.icursor(END)
-
-    def past_rus(self, event):
-        """Функция вставления текста. Активируется Ctrl+М"""
-        if isinstance(event.widget, Entry) and hex(GetKeyboardLayout()) != "0x4090409":
-            try:
-                event.widget.delete(SEL_FIRST, SEL_LAST)
-                event.widget.insert(INSERT, ppc.paste())
-            except TclError:
-                event.widget.insert(INSERT, ppc.paste())
-
-    def cut_rus(self, event):
-        """Функция вырезки текста. Активируется Ctrl+Ч"""
-        if isinstance(event.widget, Entry) and hex(GetKeyboardLayout()) != "0x4090409":
-            try:
-                ppc.copy(event.widget.selection_get())
-                event.widget.delete(SEL_FIRST, SEL_LAST)
-            except TclError:
-                pass
 
     def run(self):
         """Открывает окно"""
@@ -116,16 +117,15 @@ class LoginWindow(Window):
         login_frame.pack(padx=20)
 
         Label(login_frame, text="Логин:").pack(anchor=W)
-        self.login_entry = Entry(login_frame, font=("Andale Mono", 10))
+        self.login_entry = Entries(login_frame, font=("Andale Mono", 10))
         self.login_entry.pack(fill=X, anchor=W)
 
         Label(login_frame, text="Пароль:").pack(anchor=W)
-        self.password_entry = Entry(login_frame, font=("Andale Mono", 10), show="*")
+        self.password_entry = Entries(login_frame, font=("Andale Mono", 10), show="*")
         self.password_entry.pack(fill=X, anchor=W)
 
         self.master.protocol("WM_DELETE_WINDOW", self.stop_program)
         self.master.bind("<Return>", self.log_in)
-        self.master.bind("<Key>", self.on_bind)  # подключение горячик клавиш
         self.db = DB_hash()
 
     def create_new(self):
@@ -189,7 +189,7 @@ class MainWindow(Window):
         search_frame = Frame(self.master)
         search_frame.pack(fill=X, padx=5, pady=15)
 
-        self.entry = Entry(search_frame, fg="grey")
+        self.entry = Entries(search_frame, fg="grey")
         self.entry.insert(0, "Поиск...")
         self.entry.pack(fill=X, padx=5, expand=True)
 
@@ -222,7 +222,7 @@ class MainWindow(Window):
         self.back_btn.pack(side=RIGHT, padx=5)
         self.back_btn.disable()
 
-        self.master.bind("<Key>", self.on_bind)  # Подключение горячих клавиш
+        self.entry.bind("<Key>", self.search)
         self.entry.bind("<FocusIn>", self.focusinentry)
         self.entry.bind("<FocusOut>", self.focusoutentry)
 
@@ -318,22 +318,6 @@ class MainWindow(Window):
             self.entry.insert(0, 'Поиск...')
             self.entry.config(fg = 'grey')
 
-    def on_bind(self, event):
-        """Вызывается при нажатии любой клавиши. Если это горячие сочетания,
-         то вызывает эту функцию, иначе вызывает search()"""
-        if (event.state & 4 > 0):
-            symbol = chr(event.keycode)
-            if symbol == "A":
-                self.selectall_rus(event)
-            elif symbol == "X":
-                self.cut_rus(event)
-            elif symbol == "C":
-                self.copy_rus(event)
-            elif symbol == "V":
-                self.past_rus(event)
-        else:
-            self.search()
-
 
 class ChildWindow:
     """Класс дочерних окон."""
@@ -376,55 +360,9 @@ class ChildWindow:
         self.root.focus_set()
         self.root.wait_window()
 
-    def copy_rus(self, event):
-        """Функция копирования. Активируется Ctrl+С"""
-        if isinstance(event.widget, Entry) and hex(GetKeyboardLayout()) != "0x4090409":
-            try:
-                ppc.copy(event.widget.selection_get())
-            except TclError:
-                pass
-
-    def selectall_rus(self, event):
-        """Функция выделения всего. Активируется Ctrl+Ф"""
-        if isinstance(event.widget, Entry) and hex(GetKeyboardLayout()) != "0x4090409":
-            self.master.after(10, lambda w: w.selection_range(0, END), event.widget)
-            event.widget.icursor(END)
-
-    def past_rus(self, event):
-        """Функция вставления текста. Активируется Ctrl+М"""
-        if isinstance(event.widget, Entry) and hex(GetKeyboardLayout()) != "0x4090409":
-            try:
-                event.widget.delete(SEL_FIRST, SEL_LAST)
-                event.widget.insert(INSERT, ppc.paste())
-            except TclError:
-                event.widget.insert(INSERT, ppc.paste())
-
-    def cut_rus(self, event):
-        """Функция вырезки текста. Активируется Ctrl+Ч"""
-        if isinstance(event.widget, Entry) and hex(GetKeyboardLayout()) != "0x4090409":
-            try:
-                ppc.copy(event.widget.selection_get())
-                event.widget.delete(SEL_FIRST, SEL_LAST)
-            except TclError:
-                pass
-
     def close_window(self):
         """Закрывает окно"""
         self.root.destroy()
-
-    def on_bind(self, event):
-        """Вызывается при нажатии любой клавиши. Если это горячие сочетания,
-         то вызывает эту функцию."""
-        if (event.state & 4 > 0):
-            symbol = chr(event.keycode)
-            if symbol == "A":
-                self.selectall_rus(event)
-            elif symbol == "X":
-                self.cut_rus(event)
-            elif symbol == "C":
-                self.copy_rus(event)
-            elif symbol == "V":
-                self.past_rus(event)
 
 
 class NoteWindow(ChildWindow):
@@ -455,21 +393,21 @@ class NoteWindow(ChildWindow):
         name_frame = Frame(self.main_frame)
         name_frame.pack(fill=X)
         Label(name_frame, text="Name:", width=10).pack(side=LEFT, padx=5, pady=5)
-        self.name_entry = Entry(name_frame, font=('Andale Mono', 10))
+        self.name_entry = Entries(name_frame, font=('Andale Mono', 10))
         self.name_entry.pack(fill=X, padx=5, expand=True)
 
         # nickname
         nickname_frame = Frame(self.main_frame)
         nickname_frame.pack(fill=X)
         Label(nickname_frame, text="Nickname:", width=10).pack(side=LEFT, padx=5, pady=5)
-        self.nickname_entry = Entry(nickname_frame, font=('Andale Mono', 10))
+        self.nickname_entry = Entries(nickname_frame, font=('Andale Mono', 10))
         self.nickname_entry.pack(fill=X, padx=5, expand=True)
 
         # password
         password_frame = Frame(self.main_frame)
         password_frame.pack(fill=X)
         Label(password_frame, text="Password:", width=10).pack(side=LEFT, padx=5, pady=5)
-        self.password_entry = Entry(password_frame, font=('Andale Mono', 10))
+        self.password_entry = Entries(password_frame, font=('Andale Mono', 10))
         self.password_entry.pack(fill=X, padx=5, expand=True)
 
         Label(self.main_frame).pack(side=LEFT, padx=65)  # отступ
@@ -477,7 +415,6 @@ class NoteWindow(ChildWindow):
             side=LEFT)  # кнопка для выбора иконки
         Buttons(self.main_frame, text='Сгенерировать пароль',
                 command=self.open_generate_window).pack(side=LEFT, padx=10)  # кнопка для генерации пароля
-        self.root.bind("<Key>", self.on_bind)  # подключение горячик клавиш
 
     def update_icon(self, dir_image: str or None):
         """Обновляет иконку. Показывает изображение находящееся по пути dir_image. \n
@@ -823,25 +760,24 @@ class CreateWindow(ChildWindow):
         login_frame.pack(padx=20)
 
         Label(login_frame, text="Логин:").pack(anchor=W)
-        self.login_entry = Entry(login_frame, font=("Andale Mono", 10))
+        self.login_entry = Entries(login_frame, font=("Andale Mono", 10))
         self.login_entry.pack(fill=X, anchor=W)
 
         Label(login_frame, text="Пароль:").pack(anchor=W)
-        self.password_entry = Entry(login_frame, font=("Andale Mono", 10), show="*")
+        self.password_entry = Entries(login_frame, font=("Andale Mono", 10), show="*")
         self.password_entry.pack(fill=X, anchor=W)
 
         Label(login_frame, text="Повторите пароль:").pack(anchor=W)
-        self.repassword_entry = Entry(login_frame, font=("Andale Mono", 10), show="*")
+        self.repassword_entry = Entries(login_frame, font=("Andale Mono", 10), show="*")
         self.repassword_entry.pack(fill=X, anchor=W)
 
         Label(login_frame, text="Любимый цвет:").pack(anchor=W)
-        self.color_entry = Entry(login_frame, font=("Andale Mono", 10),validate="key")
+        self.color_entry = Entries(login_frame, font=("Andale Mono", 10),validate="key")
         self.color_entry.config(validatecommand=(self.color_entry.register(self.entery_filter), '%P', '%d'))
         self.color_entry.pack(fill=X, anchor=W)
 
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
         self.root.bind("<Return>", self.create_new_ac)
-        self.root.bind("<Key>", self.on_bind)  # подключение горячик клавиш
 
     def entery_filter(self, inStr, acttyp):
         """"Функция орграничяения ввода. Разрешает вводить только буквы"""
@@ -849,10 +785,6 @@ class CreateWindow(ChildWindow):
             if not inStr.isalpha():
                 return False
         return True
-
-    def open_DeleteWindow(self):
-        """Some text"""
-        pass
 
     def check_entry_parametrs(self) -> bool:
         """Проверяет корректность введенных данных"""
