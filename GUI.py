@@ -43,10 +43,16 @@ class Buttons(Button):
 
 
 class Entries(Entry):
-    """Наследованный класс Entry с опреденными функциями копирования, вставки и т.д."""
+    """Наследованный класс Entry с определенным обработчиком событий. \n
+    Работа с Буфером обмена: Ctrl + A; Ctrl + X; Ctrl + C; Ctrl + V \n
+    Перемещение по полям ввода с помощью клавиш Up и Down"""
+
     def __init__(self, master=None, cnf={}, **kw):
         super().__init__(master, kw)
+        self.master = master
         self.bind("<Control-Key>", self.workcopy)
+        self.bind("<Up>", self.moveup)
+        self.bind("<Down>", self.movedown)
 
     def workcopy(self, event):
         """"Функция проверки и выполнения нужной команды"""
@@ -66,6 +72,27 @@ class Entries(Entry):
         pf = getattr(u, "GetKeyboardLayout")
         return hex(pf(0)) == '0x4190419'
 
+    def moveup(self, event):
+        """Команда по пермещению курсора вверх между разыми объектами Entries"""
+        children = self.master.winfo_children()
+        me = children.index(self)
+        try:
+            for widget in (children[me:0:-1] + [children[0]]):
+                if isinstance(widget, Entries):
+                    widget.focus_set()
+        except IndexError:
+            pass
+
+    def movedown(self, event):
+        """Команда по перемещению курсора вниз между разными объектами Entries"""
+        children = self.master.winfo_children()
+        me = children.index(self)
+        try:
+            for widget in children[me:]:
+                if isinstance(widget, Entries):
+                    widget.focus_set()
+        except IndexError:
+            pass
 
 class Window:
     """Класс окна. (Трофарет)"""
