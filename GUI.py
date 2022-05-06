@@ -18,7 +18,7 @@ import os
 import sys
 
 state_past = False  # переменная состояния для корректного копирования в password_entry
-
+new_login = None
 
 class Buttons(Button):
     """Дочерний класс от класса Button. Имеет дополнительные аргументы:\n
@@ -129,15 +129,12 @@ class LoginWindow(Window):
         self.db = DB_hash()
 
     def create_new(self):
-        """Создает новый аккунт, по данным из полей ввода."""
-        self.login = self.login_entry.get()
-        if self.login != '' and \
-                self.password_entry.get() != '':  # если заполены все поля ввода
-            key, salt = func.hash_password(self.password_entry.get())  # хеширование введенного пароля  
-            self.db.saving(self.login, key, salt)  # сохранение ключа и соли
-            self.master.destroy()  # выходим из этого окна
-        else:  # иначне выходим выводим предупреждение о том что заполнены не все поля 
-            showwarning(title="Внимание", message="Оба поля ввода должны быть заполнены")
+        """Открывает окно для создания новго логина. 
+        В случае создания переходит к главному окну, с новым логином, иначе пропуск события"""
+        CreateWindow(self.master, self.db).grab_focus()
+        if new_login:
+            self.login = new_login
+            self.master.destroy()
 
     def log_in(self, event=None):
         """Проверяет корректность пароля.
@@ -811,22 +808,14 @@ class Note:
 class CreateWindow(ChildWindow):
     """Класс окошка для создания новго пользователя."""
     def __init__(self, parent: Tk or Toplevel, database: DB_hash):
-        super().__init__(parent, 500, 400)
+        super().__init__(parent, 500, 350)
         self.database = database
         self.parent = parent
 
         # Корректировка кнопок
-        Label(self.button_frame, pady=15).pack(anchor=W)  # Заглушка для отображения кнопок
-
-        self.del_btn = Buttons(self.button_frame, text='Удалить аккаунт',
-                               activebackground='red', command=self.open_DeleteWindow)  # кнопка Удалить
-        self.del_btn.place(x=140, y=10)
-
         self.ok_btn= Buttons(self.main_frame,  text="Создать аккаунт", activebackground='#63DB64', command=self.create_new_ac)  # кнопка Сохранить
         self.ok_btn.place(x=195, y=280)
-        
-        self.close_btn.place(x=280, y=10)
-        self.close_btn.config(command=self.close_window)  # кнопка Закрыть
+        self.button_frame.destroy()
 
         Label(self.main_frame, text="PassMan", font=('Arial', 24)).pack()
         Label(self.main_frame, text="Создание нового пользователя").pack(pady=20)
@@ -891,7 +880,8 @@ class CreateWindow(ChildWindow):
             login = self.login_entry.get()
             key,salt = func.hash_password(self.password_entry.get())  # хеширование введенного пароля
             self.database.saving(login, key, salt, self.color_entry.get())  # сохранение данных
-            ppc.copy(login)  # Копрование логина
+            global new_login
+            new_login = login
             self.root.destroy()  # выходим из этого окна
 
 if __name__ == "__main__":
