@@ -142,7 +142,7 @@ class LoginWindow(Window):
         self.login = self.login_entry.get()  # получает логин
         if self.login != '' and self.password_entry.get() != '':  # если введено все поля ввода
             try:  # пытаемся загрузить ключ и сольь
-                true_key, salt = self.db.load(self.login)  # загрузка из памяти ключа и соли
+                true_key, salt = self.db.load(self.login)[:2]  # загрузка из памяти ключа и соли
                 new_key, salt = func.hash_password(self.password_entry.get(), salt)  # хеширование введнного пароля по загруженной соли 
                 if new_key == true_key:  # если введен паравильный пароль
                     self.master.destroy()  # выходим из этого окна
