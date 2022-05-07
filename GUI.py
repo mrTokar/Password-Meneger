@@ -1,10 +1,10 @@
 """Содержит классы связанные с GUI приложения: Note, Window, ChildWindow, NoteWindow, Buttons"""
 
 # tkinter
-from tkinter import N, S, SOLID, Y, TclError, Tk, Button, Entry, Label, Frame, Canvas
+from tkinter import CENTER, E, N, S, SOLID, SW, Y, TclError, Tk, Button, Entry, Label, Frame, Canvas
 from tkinter import Toplevel, Checkbutton, IntVar, Radiobutton, Scale, StringVar
 from tkinter.constants import END, INSERT, SEL_FIRST, SEL_LAST, TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT, BOTTOM, GROOVE
-from tkinter.messagebox import askyesno, showwarning
+from tkinter.messagebox import askyesno, showinfo, showwarning
 from tkinter.filedialog import askopenfilename
 
 # PIL for tkinter
@@ -12,7 +12,7 @@ from PIL import Image as PilImage
 from PIL import ImageTk
 
 # system
-from win32api import GetKeyboardLayout, LoadKeyboardLayout
+from winsound import MessageBeep, MB_ICONHAND
 import os
 import sys
 from ctypes import windll
@@ -107,16 +107,9 @@ class Window:
         self.master.resizable(False, False)
         self.first = True
 
-    def set_eng(self, event):
-        """Устанавливает Англискую раскладку только один раз при активации окна"""
-        if self.first :
-            LoadKeyboardLayout('00000409', 1)
-            self.first = False
-
     def run(self):
         """Открывает окно"""
         self.master.mainloop()
-        self.set_eng(None)
 
 
 class LoginWindow(Window):
@@ -161,6 +154,7 @@ class LoginWindow(Window):
         CreateWindow(self.master, self.db).grab_focus()
         if new_login:
             self.login = new_login
+            self.db.connection_close()
             self.master.destroy()
 
     def log_in(self, event=None):
@@ -172,6 +166,7 @@ class LoginWindow(Window):
                 true_key, salt = self.db.load(self.login)[:2]  # загрузка из памяти ключа и соли
                 new_key, salt = func.hash_password(self.password_entry.get(), salt)  # хеширование введнного пароля по загруженной соли 
                 if new_key == true_key:  # если введен паравильный пароль
+                    self.db.connection_close()
                     self.master.destroy()  # выходим из этого окна
                 else:  # иначе выводим предупреждение о том что неверный пароль
                     showwarning(title="Внимание", message="Неверный пароль")
@@ -235,7 +230,13 @@ class MainWindow(Window):
         self.button_frame.pack()
 
         status_frame = Frame(self.main_frame)  # рамка для отображения активной страницы и кнопок перемотки
-        status_frame.pack(side=BOTTOM, padx=100, pady=5)
+        status_frame.pack(side=BOTTOM, padx=5, pady=5, fill=BOTH)
+
+        self.del_btn = Buttons(status_frame, text="Удалить поьзователя", activebackground="red",
+                                activeforeground="white", command=self.open_del_ac)
+        self.del_btn.pack(side=RIGHT, anchor=E)
+
+        Label(status_frame).pack(side=RIGHT, padx=30)  # заглушка в виде отступа 
 
         self.next_btn = Buttons(status_frame, text="Далее >", command=self.page_up)
         self.next_btn.pack(side=RIGHT, padx=5)
@@ -243,11 +244,11 @@ class MainWindow(Window):
             self.next_btn.disable()
 
         self.status = Label(status_frame, text=f"Стриница 1 из {len(self.obj_on_page)}")
-        self.status.pack(sid=RIGHT)
+        self.status.pack(side=RIGHT)
 
         self.back_btn = Buttons(status_frame, text="< Назад", command=self.page_down)
         self.back_btn.pack(side=RIGHT, padx=5)
-        self.back_btn.disable()
+        self.back_btn.disable()       
 
         self.entry.bind("<Key>", self.search)
         self.entry.bind("<FocusIn>", self.focusinentry)
@@ -345,6 +346,39 @@ class MainWindow(Window):
             self.entry.insert(0, 'Поиск...')
             self.entry.config(fg = 'grey')
 
+    def open_del_ac(self):
+        message = ChildWindow(self.master, 400, 133, "Подтвердите удаление")
+
+        Label(message.button_frame, height=2).pack(side=LEFT)  # заглушка для отображения 
+        message.ok_btn.place(x=135, y=5)
+        message.ok_btn.config(text='Удалить',activebackground="red", activeforeground="white", command=self.delete_login)
+        message.close_btn.place(x=210, y=5)
+
+        Label(message.main_frame, text='После заверщения все данные безвозратно удаляться\nВы точно хотите удалить пароль?\nДля подверждения введите ваш пароль').pack()
+        self.check = Entries(message.main_frame)
+        self.check.pack(padx= 20, pady=10, fill=X)
+        self.check.bind("<Return>", self.delete_login)
+        
+        MessageBeep(MB_ICONHAND)
+        message.grab_focus()
+
+    def delete_login(self, event=None):
+        """Проверяет подвтерждение и истинном случае удаляет аккунт из двух БД"""
+        db = DB_hash()
+        log = self.login.get_table()
+        true_key, salt = db.load(log)[:2]
+        if func.hash_password(self.check.get(), salt)[0] == true_key:
+            db.delete_note(log)
+            db.connection_close()
+            self.login.delete_table(log)
+            showinfo(title="Успешно", message="Аккаунт удален! Программа презапуститься")
+            # перезапуск программы
+            python = sys.executable
+            os.execl(python, python, *sys.argv)
+        else:
+            db.connection_close()
+            self.check.config(fg="red")
+
 
 class ChildWindow:
     """Класс дочерних окон."""
@@ -371,7 +405,7 @@ class ChildWindow:
         self.button_frame = Frame(self.root)
         self.button_frame.pack(fill=X, expand=False)
 
-        self.close_btn = Buttons(self.button_frame, text="Закрыть")
+        self.close_btn = Buttons(self.button_frame, text="Закрыть", command=self.root.destroy)
         self.ok_btn = Buttons(self.button_frame, text="Ок", activebackground='#63DB64')
 
     def set_defualt_button(self):
@@ -403,7 +437,8 @@ class NoteWindow(ChildWindow):
         self.set_defualt_button()  # Позицирование кнопок
 
         self.del_btn = Buttons(self.button_frame, text='Удалить',
-                               activebackground='red', command=commands['del_command'])  # кнопка Удалить
+                               activebackground='red', activeforeground='white',
+                               command=commands['del_command'])  # кнопка Удалить
         self.del_btn.pack(anchor=W, padx=15, pady=10)
 
         self.ok_btn.config(text="Сохранить", command=commands['ok_command'])  # кнопка Сохранить
@@ -508,7 +543,6 @@ class GenerateWindow(ChildWindow):
         # корректировка нижгних кнопок
         self.set_defualt_button()  # позицинирование кнопок
         self.ok_btn.config(text="Скоприровать и сохранить", command=self.copy_and_save)
-        self.close_btn.config(command=self.root.destroy)
 
         # области
         password_frame = Frame(self.main_frame)
@@ -833,7 +867,7 @@ class CreateWindow(ChildWindow):
             return False
         return True
 
-    def create_new_ac(self):
+    def create_new_ac(self, evnet=None):
         """Создает новый аккаунт по введеным данным."""
         if self.check_entry_parametrs():
             login = self.login_entry.get()
@@ -844,6 +878,5 @@ class CreateWindow(ChildWindow):
             self.root.destroy()  # выходим из этого окна
 
 if __name__ == "__main__":
-    # ChildWindow(Tk(), 500, 300).grab_focus()
-    test = CreateWindow(Tk(), DB_hash())
-    test.grab_focus()
+    win = MainWindow("tokar")
+    win.run()

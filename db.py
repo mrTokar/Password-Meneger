@@ -145,6 +145,7 @@ class DB:
 	
         self.cursor.execute('DELETE FROM {}'.format(login))
         self.connection.commit()
+        self.connection_close()
 
 
 class DB_hash:
@@ -255,7 +256,7 @@ class DB_hash:
         """Удаление входных данных пользователя в БД. \n
         login - нужный пользователь"""
 
-        self.cursor.execute("DELETE FROM {0} WHERE {1} = '{2}'".format('hash', 'name', login))
+        self.cursor.execute("DELETE FROM {0} WHERE {1} = '{2}'".format('hash', 'login', login))
         self.connection.commit()
 
 
