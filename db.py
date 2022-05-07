@@ -224,7 +224,7 @@ class DB_hash:
             raise LoginError(login)
         for note in rows:
             if note[0] == login:
-                return note[1:]
+                return note
         raise LoginError(login)
 
     def create_new_table(self):
@@ -270,11 +270,8 @@ class DB_hash:
 
 
 if __name__ == "__main__":
-    test = DB("tokar")
-    test.save(["steam", "kek", "123", "+"])
-    print(test.load("steam"))
-    print(test.load_all_name())
-
     test2 = DB_hash()
-    test2.saving("tokar", bytes('10101100', encoding='utf-8').hex(), bytes('100110110', encoding='utf-8').hex())
+    test2.saving("tokar", bytes('10101100', encoding='utf-8').hex(), bytes('100110110', encoding='utf-8').hex(), "green")
+    print(test2.load('tokar'))
+    test2.saving("tokar", bytes('10101100', encoding='utf-8').hex(), bytes('100110110', encoding='utf-8').hex(), "red")
     print(test2.load('tokar'))

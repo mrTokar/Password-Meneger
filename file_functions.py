@@ -1,11 +1,8 @@
 """Содержит функции связанные с работой с файлами: saving и loading, check_directory.
 А также функцию распределющую объекты note по страницам - page_distribution"""
-import os
 from pickle import dump, load
 from os import listdir, remove, mkdir, path, urandom
 from PIL import Image
-from win32api import SetFileAttributes
-from win32con import FILE_ATTRIBUTE_HIDDEN
 import sys
 from hashlib import pbkdf2_hmac
 

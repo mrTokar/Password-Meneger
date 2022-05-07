@@ -146,6 +146,10 @@ class LoginWindow(Window):
         self.password_entry = Entries(login_frame, font=("Andale Mono", 10), show="*")
         self.password_entry.pack(fill=X, anchor=W)
 
+        openfoget = lambda: ForgetWindow(self.master, self.db).grab_focus()
+        Buttons(login_frame, text='Забыл пароль', fg="#415869", activeforeground="#2d728a",
+                relief=FLAT, activebackground="#f0f0f0", command=openfoget).pack(anchor=E) 
+
         self.master.protocol("WM_DELETE_WINDOW", self.stop_program)
         self.master.bind("<Return>", self.log_in)
         self.db = DB_hash()
@@ -165,7 +169,7 @@ class LoginWindow(Window):
         self.login = self.login_entry.get()  # получает логин
         if self.login != '' and self.password_entry.get() != '':  # если введено все поля ввода
             try:  # пытаемся загрузить ключ и сольь
-                true_key, salt = self.db.load(self.login)[:2]  # загрузка из памяти ключа и соли
+                true_key, salt = self.db.load(self.login)[1:3]  # загрузка из памяти ключа и соли
                 new_key, salt = func.hash_password(self.password_entry.get(), salt)  # хеширование введнного пароля по загруженной соли 
                 if new_key == true_key:  # если введен паравильный пароль
                     self.db.connection_close()
@@ -184,20 +188,6 @@ class LoginWindow(Window):
     def stop_program(self):
         """Останавливает программу, при закрытии окна"""
         sys.exit(0)
-
-    def on_bind(self, event):
-        """Вызывается при нажатии любой клавиши. Если это горячие сочетания,
-         то вызывает эту функцию."""
-        if (event.state & 4 > 0):
-            symbol = chr(event.keycode)
-            if symbol == "A":
-                self.selectall_rus(event)
-            elif symbol == "X":
-                self.cut_rus(event)
-            elif symbol == "C":
-                self.copy_rus(event)
-            elif symbol == "V":
-                self.past_rus(event)
 
 
 class MainWindow(Window):
@@ -373,7 +363,7 @@ class MainWindow(Window):
         """Проверяет подвтерждение и истинном случае удаляет аккунт из двух БД"""
         db = DB_hash()
         log = self.login.get_table()
-        true_key, salt = db.load(log)[:2]
+        true_key, salt = db.load(log)[1:3]
         if func.hash_password(self.check.get(), salt)[0] == true_key:
             db.delete_note(log)
             db.connection_close()
@@ -395,7 +385,7 @@ class ChildWindow:
         При инициализации имеет аргумент по умаолчанию name='Passman'
         Сразу установлены размеры окна и иконка. Фокусировка перелючается на данное окно.
         Автоматически создается 2 пространтсва: Освновное и для нижних кнопок.
-        А также базовый кнопки: close_btn и ok_btn(без привязки к функциям!)"""
+        А также базовый кнопки: close_btn и ok_btn(без привязки к функциям и их позиционирования!)"""
         self.root = Toplevel(parent)
         self.root.title(name)
         self.root.iconbitmap(func.resource_path("resources/icon.ico"))
@@ -864,7 +854,7 @@ class CreateWindow(ChildWindow):
         if not (login and password and repassword and color):
             showwarning(title="Ошибка", message="Должны быть заполнены все поля")
             return False
-            
+
         try:
             self.database.load(login)
             showwarning(title="Ошибка", message="Такой пользователь уже существует")
@@ -887,7 +877,121 @@ class CreateWindow(ChildWindow):
             new_login = login
             self.root.destroy()  # выходим из этого окна
 
+class ForgetWindow(ChildWindow):
+    def __init__(self, parent: Tk or Toplevel, db: DB_hash):
+        super().__init__(parent, 400, 150, "Восстановаление аккаунта")
+        self.db = db
+        
+        Label(self.button_frame).pack(side=RIGHT, padx=65, pady=10)  # заглушка чтобы кнопки были по середине
+        self.close_btn.pack(side=RIGHT, padx=10)
+        self.ok_btn.pack(side=RIGHT, padx=10, pady=5)
+        self.ok_btn.config(text="Окей", command=self.checkuser)
+        
+        self.question = Label(self.main_frame, text='Введите ваш Логин')
+        self.question.pack(pady=10)
+        self.answer = Entries(self.main_frame)
+        self.answer.pack(padx= 50, pady=10, fill=X)
+
+        self.answer.bind("<Return>", self.checkuser)
+
+    def checkuser(self, event=None):
+        """Проверка на существование введеного пользователя"""
+        try:
+            self.user = self.db.load(self.answer.get())
+            self.question.config(text="Какой ваш любимый цвет?")
+            self.answer.delete(0, END)
+
+            self.ok_btn.config(command=self.checkcolor)
+            self.answer.bind("<Return>", self.checkcolor)
+
+        except LoginError:
+            if self.answer.get():
+                showwarning(title="Ошибка", message="Такого пользователся не существует")
+            else:
+                showwarning(title="Ошибка", message="Поле должно быть заполенно")
+
+    def checkcolor(self, event=None):
+        """Проверка на корректность введнного цвета"""
+        if self.answer.get().lower().strip() == self.user[-1]:
+
+            self.question.config(text="Придумайте новый пароль")
+            self.answer.delete(0, END) 
+            self.repass = Entries(self.main_frame)
+            self.repass.pack(padx=50, fill=X)
+
+            self.answer.insert(0, "Введите новый пароль")
+            self.answer.icursor(0)
+            self.answer.config(fg="grey")
+            self.repass.insert(0, "Повторите пароль")
+            self.repass.config(fg="grey")
+            
+            self.focusin = lambda event: event.widget.icursor(0)
+
+            self.answer.bind("<FocusIn>", self.focusin)
+            self.answer.bind("<FocusOut>", self.focusout)
+            self.answer.bind("<Key>", self.clearhelp)
+
+            self.repass.bind("<FocusIn>", self.focusin)
+            self.repass.bind("<FocusOut>", self.focusout)
+            self.repass.bind("<Key>", self.clearhelp)            
+
+            self.ok_btn.config(command=self.savenew)
+            self.answer.bind("<Return>", self.savenew)
+            self.repass.bind("<Return>", self.savenew)
+
+        else:
+            if self.answer.get():
+                showwarning(title="Ошибка", message="При регистрации был указан другой цвет")
+            else:
+                showwarning(title="Ошибка", message="Поле должно быть заполенно")
+
+    def clearhelp(self, event):
+        """Функция маскировки подсказки в Entry"""
+        if event.widget == self.answer:
+
+            if self.answer.get() == "Введите новый пароль":
+                self.answer.delete(0, END)
+                self.answer.config(fg="black")
+
+        else:
+
+            if self.repass.get() == "Повторите пароль":
+                self.repass.delete(0, END)
+                self.repass.config(fg="black")
+
+    def focusout(self, event):
+        """Функция вывода подсказки, если Entry пустой"""
+        if event.widget == self.answer:
+
+            if self.answer.get() == "":
+                self.answer.insert(0, "Введите новый пароль")
+                self.answer.config(fg="grey")
+
+        else:
+
+            if self.repass.get() == "":
+                self.repass.insert(0, "Повторите пароль")
+                self.repass.config(fg="grey")
+
+    def savenew(self, event=None):
+        """Сохраяняет новый указанный пароль для пользователя"""
+        passw = self.answer.get()
+        repassw = self.repass.get()
+        passw = '' if passw == "Введите новый пароль" else passw
+        repassw = '' if repassw == "Повторите пароль" else repassw
+
+        if (not passw) or (not repassw):
+            showwarning(title="Ошибка", message="Оба поля должны быть заполенны")
+
+        elif passw != repassw:
+            showwarning(title="Ошибка", message="Пароли не совпадают")
+
+        else:
+            key, salt = func.hash_password(passw)
+            self.db.saving(self.user[0], key, salt, self.user[-1])
+            del key, salt
+            self.root.destroy()
+
 if __name__ == "__main__":
-    root = Tk()
-    win = CreateWindow(root, DB_hash())
-    win.grab_focus()
+    root = LoginWindow()
+    root.run()
