@@ -250,7 +250,9 @@ class MainWindow(Window):
         self.back_btn.pack(side=RIGHT, padx=5)
         self.back_btn.disable()       
 
-        self.entry.bind("<Key>", self.search)
+        waitandwork = lambda event: self.entry.after(10, self.search)  # Небольшая задержка в раобте для того, чтобы успел отобразиться введенный символ для последющего чтения 
+
+        self.entry.bind("<Key>", waitandwork)
         self.entry.bind("<FocusIn>", self.focusinentry)
         self.entry.bind("<FocusOut>", self.focusoutentry)
 
