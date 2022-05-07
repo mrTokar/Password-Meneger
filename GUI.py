@@ -359,6 +359,9 @@ class MainWindow(Window):
         Label(message.main_frame, text='После заверщения все данные безвозратно удаляться\nВы точно хотите удалить пароль?\nДля подверждения введите ваш пароль').pack()
         self.check = Entries(message.main_frame)
         self.check.pack(padx= 20, pady=10, fill=X)
+
+        fixcolor = lambda event: self.check.config(fg="black")  # Изменение цвета на нормальный при вводе чего-либо
+        self.check.bind("<Key>", fixcolor)
         self.check.bind("<Return>", self.delete_login)
         
         MessageBeep(MB_ICONHAND)
