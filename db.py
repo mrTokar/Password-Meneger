@@ -1,5 +1,7 @@
 import os
 import sqlite3
+from win32api import SetFileAttributes
+from win32con import FILE_ATTRIBUTE_HIDDEN
 
 class LoginError(Exception):
     """Исключение LoginError поднимаетсся, если в БД не существует нужной улючевой ячейки"""
@@ -26,8 +28,9 @@ class DB:
             os.mkdir("resources")
             file = open("resources\\data.db", "w+")
             file.close()
-        self.connect_db()
+        SetFileAttributes("resources\\data.db", FILE_ATTRIBUTE_HIDDEN)
 
+        self.connect_db()
         self.table = table
         self.check_table()
 
@@ -170,6 +173,8 @@ class DB_hash:
             os.mkdir("resources")
             file = open("resources\\hashedpasswords.db", "w+")
             file.close()
+        SetFileAttributes("resources\\hashedpasswords.db", FILE_ATTRIBUTE_HIDDEN)
+
         self.connect_db()
         self.check_table()
 
