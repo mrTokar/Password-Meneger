@@ -23,7 +23,7 @@ import pyperclip as ppc
 
 # files
 import file_functions as func
-from db import DB_hash, DB
+from db import DB_hash, DB, LoginError
 
 state_past = False  # переменная состояния для корректного копирования в password_entry
 new_login = None
@@ -172,7 +172,7 @@ class LoginWindow(Window):
                     self.master.destroy()  # выходим из этого окна
                 else:  # иначе выводим предупреждение о том что неверный пароль
                     showwarning(title="Внимание", message="Неверный пароль")
-            except TypeError:
+            except LoginError:
                 showwarning(title="Внимание", message="Пользователь не найден")
         else:  # иначе выводим предупреждение о том что заполенены не все поля ввода 
             showwarning(title="Внимание", message="Оба поля ввода должны быть заполнены")
@@ -864,15 +864,18 @@ class CreateWindow(ChildWindow):
         if not (login and password and repassword and color):
             showwarning(title="Ошибка", message="Должны быть заполнены все поля")
             return False
-
-        if self.database.load(login):
+            
+        try:
+            self.database.load(login)
             showwarning(title="Ошибка", message="Такой пользователь уже существует")
             return False
 
-        if self.password_entry.get() != self.repassword_entry.get():
-            showwarning(title="Ошибка", message='Введенные пароли не совпадают')
-            return False
-        return True
+        except LoginError:
+
+            if self.password_entry.get() != self.repassword_entry.get():
+                showwarning(title="Ошибка", message='Введенные пароли не совпадают')
+                return False
+            return True
 
     def create_new_ac(self, evnet=None):
         """Создает новый аккаунт по введеным данным."""

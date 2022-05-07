@@ -1,6 +1,17 @@
 import os
 import sqlite3
 
+class LoginError(Exception):
+    """Исключение LoginError поднимаетсся, если в БД не существует нужной улючевой ячейки"""
+    def __init__(self, login = ""):
+        if login:
+            self.message = f"User's name '{login}' does not exist"
+        else:
+            self.message = "This User does not exist"
+
+    def __str__(self):
+        return self.message
+
 class DB:
 
     def __init__(self, table: str):
@@ -203,18 +214,18 @@ class DB_hash:
         self.cursor.execute(operation)
         self.connection.commit()
 
-    def load(self, login: str) -> tuple or None:
-        """Возвращает данные о пользователе из БД. Если записи не существует возвращает None \n
+    def load(self, login: str) -> tuple:
+        """Возвращает данные о пользователе из БД.\n
         login - нужный пользователь, по котрому нужно загрузить кортеж"""
 
         self.cursor.execute('SELECT * FROM hash')
         rows = self.cursor.fetchall()
         if rows is None:
-            return None
+            raise LoginError(login)
         for note in rows:
             if note[0] == login:
                 return note[1:]
-        return None
+        raise LoginError(login)
 
     def create_new_table(self):
         """Создание таблицы в БД (в случае ее отсутствия)"""
