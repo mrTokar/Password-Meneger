@@ -77,9 +77,10 @@ class Entries(Entry):
         children = self.master.winfo_children()
         me = children.index(self)
         try:
-            for widget in (children[me:0:-1] + [children[0]]):
+            for widget in (children[me-1:0:-1] + [children[0]]):
                 if isinstance(widget, Entries):
                     widget.focus_set()
+                    break
         except IndexError:
             pass
 
@@ -88,9 +89,10 @@ class Entries(Entry):
         children = self.master.winfo_children()
         me = children.index(self)
         try:
-            for widget in children[me:]:
+            for widget in children[me+1:]:
                 if isinstance(widget, Entries):
                     widget.focus_set()
+                    break
         except IndexError:
             pass
 
@@ -883,5 +885,6 @@ class CreateWindow(ChildWindow):
             self.root.destroy()  # выходим из этого окна
 
 if __name__ == "__main__":
-    win = MainWindow("tokar")
-    win.run()
+    root = Tk()
+    win = CreateWindow(root, DB_hash())
+    win.grab_focus()
