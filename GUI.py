@@ -367,7 +367,7 @@ class MainWindow(Window):
         if func.hash_password(self.check.get(), salt)[0] == true_key:
             db.delete_note(log)
             db.connection_close()
-            self.login.delete_table(log)
+            self.login.delete_login()
             showinfo(title="Успешно", message="Аккаунт удален! Программа презапуститься")
             # перезапуск программы
             python = sys.executable

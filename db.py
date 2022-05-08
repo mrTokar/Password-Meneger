@@ -2,6 +2,7 @@ import os
 import sqlite3
 from win32api import SetFileAttributes
 from win32con import FILE_ATTRIBUTE_HIDDEN
+from file_functions import resource_path
 
 class LoginError(Exception):
     """Исключение LoginError поднимаетсся, если в БД не существует нужной улючевой ячейки"""
@@ -18,18 +19,20 @@ class DB:
 
     def __init__(self, table: str):
         """table - нужная таблица (пользователь)"""
-        if os.path.isdir('resources'): 
+
+        if os.path.isdir(resource_path('resources')): 
             "Если в данной дирректории есть папка resources"
 
-            if "data.db" not in os.listdir("resources"):
-                file = open("resources\\data.db", "w+")
+            if "data.db" not in os.listdir(resource_path("resources")):
+                file = open(resource_path("resources\\data.db"), "w+")
                 file.close()
-        else:
-            os.mkdir("resources")
-            file = open("resources\\data.db", "w+")
-            file.close()
-        SetFileAttributes("resources\\data.db", FILE_ATTRIBUTE_HIDDEN)
 
+        else:
+            os.mkdir(resource_path("resources"))
+            file = open(resource_path("resources\\data.db"), "w+")
+            file.close()
+
+        SetFileAttributes(resource_path("resources\\data.db"), FILE_ATTRIBUTE_HIDDEN)
         self.connect_db()
         self.table = table
         self.check_table()
@@ -41,7 +44,7 @@ class DB:
     def connect_db(self):
         "Подключение к БД"
 
-        self.connection = sqlite3.connect("resources\\data.db", check_same_thread=False)
+        self.connection = sqlite3.connect(resource_path("resources\\data.db"), check_same_thread=False)
         self.cursor = self.connection.cursor()
 
     def connection_close(self):
@@ -63,7 +66,7 @@ class DB:
         """Проверка существования таблицы. В случае отсутвия создает ее."""
 
         try:
-            self.cursor.execute('SELECT * FROM {self.table}')
+            self.cursor.execute(f'SELECT * FROM {self.table}')
         except sqlite3.OperationalError:
             self.create_new_table()
 
@@ -151,11 +154,10 @@ class DB:
         self.connection.commit()
 
     
-    def delete_table(self, login: str):
-        """Полное удаление всей таблицы(пользователя). \n
-        login - нужная таблица"""
+    def delete_login(self):
+        """Полное удаление всей таблицы(пользователя)"""
 	
-        self.cursor.execute('DELETE FROM {}'.format(login))
+        self.cursor.execute(f'DROP TABLE {self.table}')
         self.connection.commit()
         self.connection_close()
 
@@ -163,17 +165,17 @@ class DB:
 class DB_hash:
 
     def __init__(self):
-        if os.path.isdir('resources'): 
+        if os.path.isdir(resource_path('resources')): 
             "Если в данной дирректории есть папка resources"
 
-            if "hashedpasswords.db" not in os.listdir("resources"):
-                file = open("resources\\hashedpasswords.db", "w+")
+            if "hashedpasswords.db" not in os.listdir(resource_path("resources")):
+                file = open(resource_path("resources\\hashedpasswords.db"), "w+")
                 file.close()
         else:
-            os.mkdir("resources")
-            file = open("resources\\hashedpasswords.db", "w+")
+            os.mkdir(resource_path("resources"))
+            file = open(resource_path("resources\\hashedpasswords.db"), "w+")
             file.close()
-        SetFileAttributes("resources\\hashedpasswords.db", FILE_ATTRIBUTE_HIDDEN)
+        SetFileAttributes(resource_path("resources\\hashedpasswords.db"), FILE_ATTRIBUTE_HIDDEN)
 
         self.connect_db()
         self.check_table()
@@ -181,7 +183,7 @@ class DB_hash:
     def connect_db(self):
         "Подключение к БД"
 
-        self.connection = sqlite3.connect("resources\\hashedpasswords.db", check_same_thread=False)
+        self.connection = sqlite3.connect(resource_path("resources\\hashedpasswords.db"), check_same_thread=False)
         self.cursor = self.connection.cursor()
 
     def connection_close(self):
@@ -272,11 +274,3 @@ class DB_hash:
 
         self.cursor.execute("DELETE FROM {0} WHERE {1} = '{2}'".format('hash', 'login', login))
         self.connection.commit()
-
-
-if __name__ == "__main__":
-    test2 = DB_hash()
-    test2.saving("tokar", bytes('10101100', encoding='utf-8').hex(), bytes('100110110', encoding='utf-8').hex(), "green")
-    print(test2.load('tokar'))
-    test2.saving("tokar", bytes('10101100', encoding='utf-8').hex(), bytes('100110110', encoding='utf-8').hex(), "red")
-    print(test2.load('tokar'))
