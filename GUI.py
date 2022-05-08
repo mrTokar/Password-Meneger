@@ -368,6 +368,10 @@ class MainWindow(Window):
             db.delete_note(log)
             db.connection_close()
             self.login.delete_login()
+            try:
+                os.rmdir(func.resource_path(f"resources\\images\\{log}"))
+            except FileNotFoundError:
+                pass
             showinfo(title="Успешно", message="Аккаунт удален! Программа презапуститься")
             # перезапуск программы
             python = sys.executable
@@ -734,17 +738,22 @@ class Note:
 
     def save_note(self):
         """Сохраняет данные"""
-        if self.name != self.password_window.get_name():
-            self.login.delete_note(self.name)
-            self.name = self.password_window.get_name()
-        self.nickname = self.password_window.get_nickname()
-        self.password = self.password_window.get_password()
-        if self.icon:
-            os.rename(self.icon, self.dir_to_imgcatalog + f"{self.name}.png")
-            self.icon = self.dir_to_imgcatalog + f"{self.name}.png"
-        self.login.save([self.name, self.nickname, self.password, self.icon])
-        self.password_window.close_window()
-        self.update_func()
+        if self.password_window.get_name() == "":
+            showwarning(title="Ошибка", message="Записка обязательно должна иметь имя")
+
+        else:
+            
+            if self.name != self.password_window.get_name():
+                self.login.delete_note(self.name)
+                self.name = self.password_window.get_name()
+            self.nickname = self.password_window.get_nickname()
+            self.password = self.password_window.get_password()
+            if self.icon:
+                os.rename(self.icon, self.dir_to_imgcatalog + f"{self.name}.png")
+                self.icon = self.dir_to_imgcatalog + f"{self.name}.png"
+            self.login.save([self.name, self.nickname, self.password, self.icon])
+            self.password_window.close_window()
+            self.update_func()
 
     def choose_icon(self):
         """Открывает диалоговое окно для выбора файла"""

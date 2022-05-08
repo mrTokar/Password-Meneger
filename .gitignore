@@ -1,4 +1,5 @@
 /__pycache__
 /resources/data.db
 /resources/hashedpasswords.db
+/resources/images
 /test.py
