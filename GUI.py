@@ -6,6 +6,7 @@ from tkinter import Toplevel, Checkbutton, IntVar, Radiobutton, Scale, StringVar
 from tkinter.constants import END, INSERT, SEL_FIRST, SEL_LAST, TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT, BOTTOM, GROOVE
 from tkinter.messagebox import askyesno, showinfo, showwarning
 from tkinter.filedialog import askopenfilename
+from turtle import width
 
 # PIL for tkinter
 from PIL import Image as PilImage
@@ -464,25 +465,22 @@ class NoteWindow(ChildWindow):
         self.image_lbl.pack(side=LEFT)
 
         # название
-        name_frame = Frame(self.main_frame)
-        name_frame.pack(fill=X)
-        Label(name_frame, text="Name:", width=10).pack(side=LEFT, padx=5, pady=5)
-        self.name_entry = Entries(name_frame, font=('Andale Mono', 10))
-        self.name_entry.pack(fill=X, padx=5, expand=True)
+        widget_frame = Frame(self.main_frame)
+        widget_frame.pack(fill=X)
+
+        Label(widget_frame, text="Name:", width=10).grid(column=0, row=0, pady=5)
+        self.name_entry = Entries(widget_frame, font=('Andale Mono', 10), width=50)
+        self.name_entry.grid(column=1, row=0)
 
         # nickname
-        nickname_frame = Frame(self.main_frame)
-        nickname_frame.pack(fill=X)
-        Label(nickname_frame, text="Nickname:", width=10).pack(side=LEFT, padx=5, pady=5)
-        self.nickname_entry = Entries(nickname_frame, font=('Andale Mono', 10))
-        self.nickname_entry.pack(fill=X, padx=5, expand=True)
+        Label(widget_frame, text="Nickname:", width=10).grid(column=0, row=1, pady=5)
+        self.nickname_entry = Entries(widget_frame, font=('Andale Mono', 10), width=50)
+        self.nickname_entry.grid(column=1, row=1)
 
         # password
-        password_frame = Frame(self.main_frame)
-        password_frame.pack(fill=X)
-        Label(password_frame, text="Password:", width=10).pack(side=LEFT, padx=5, pady=5)
-        self.password_entry = Entries(password_frame, font=('Andale Mono', 10))
-        self.password_entry.pack(fill=X, padx=5, expand=True)
+        Label(widget_frame, text="Password:", width=10).grid(column=0, row=2, pady=5)
+        self.password_entry = Entries(widget_frame, font=('Andale Mono', 10), width=50)
+        self.password_entry.grid(column=1, row=2)
 
         Label(self.main_frame).pack(side=LEFT, padx=65)  # отступ
         Button(self.main_frame, text="Выбрать иконку", command=commands['choose_command']).pack(
