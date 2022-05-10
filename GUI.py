@@ -1,12 +1,10 @@
-"""Содержит классы связанные с GUI приложения: Note, Window, ChildWindow, NoteWindow, Buttons"""
+"""Содержит классы связанные с GUI приложения"""
 
 # tkinter
-from tkinter import CENTER, E, N, S, SOLID, SW, Y, TclError, Tk, Button, Entry, Label, Frame, Canvas
-from tkinter import Toplevel, Checkbutton, IntVar, Radiobutton, Scale, StringVar
-from tkinter.constants import END, INSERT, SEL_FIRST, SEL_LAST, TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT, BOTTOM, GROOVE
+from tkinter import Tk, Button, Entry, Label, Frame, Toplevel, Checkbutton, IntVar, Radiobutton, Scale, StringVar
+from tkinter.constants import END, TOP, HORIZONTAL, LEFT, X, RIGHT, RAISED, BOTH, W, FLAT, BOTTOM, GROOVE, E
 from tkinter.messagebox import askyesno, showinfo, showwarning
 from tkinter.filedialog import askopenfilename
-from turtle import width
 
 # PIL for tkinter
 from PIL import Image as PilImage
@@ -18,7 +16,7 @@ import os
 import sys
 from ctypes import windll
 
-# other lib
+# other libs
 from random import choice
 import pyperclip as ppc
 
@@ -425,14 +423,7 @@ class DeleteWindow(ChildWindow):
             db.delete_note(log)
             db.connection_close()
             self.login.delete_login()
-            try:
-                directory = func.resource_path(f"resources\\images\\{log}")
-                for file in os.listdir(directory):
-                    os.remove(directory + f"\\{file}")
-                os.rmdir(directory)
-
-            except FileNotFoundError:
-                pass
+            func.delete_files(f"resources\\images\\{log}")
 
             showinfo(title="Успешно", message="Аккаунт удален! Программа презапуститься")
             # перезапуск программы
@@ -565,7 +556,7 @@ class GenerateWindow(ChildWindow):
 
         # вывод пароля
         self.password = StringVar(value='')
-        self.password_lbl = Label(password_frame, font=('Andale Mono', 12),
+        self.password_lbl = Label(password_frame, font=('Consolas', 12),
                                   width=35, height=2, bg='#DDDEDC', textvariable=self.password)
         self.password_lbl.pack(pady=25)
 
@@ -1012,6 +1003,3 @@ class ForgetWindow(ChildWindow):
             self.db.saving(self.user[0], key, salt, self.user[-1])
             del key, salt
             self.root.destroy()
-
-if __name__ == "__main__":
-    print("not work")

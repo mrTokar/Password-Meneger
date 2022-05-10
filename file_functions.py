@@ -1,7 +1,6 @@
-"""Содержит функции связанные с работой с файлами: saving и loading, check_directory.
-А также функцию распределющую объекты note по страницам - page_distribution"""
-from pickle import dump, load
-from os import listdir, remove, mkdir, path, urandom
+"""Содержит функции связанные с работой с файлами"""
+
+from os import listdir, remove, mkdir, path, urandom, rmdir
 from PIL import Image
 import sys
 from hashlib import pbkdf2_hmac
@@ -52,4 +51,18 @@ def hash_password(password: str, salt=None):
     else:
         salt = bytes.fromhex(salt)
     key = pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
-    return key.hex(), salt.hex() 
+    return key.hex(), salt.hex()
+
+
+def delete_files(directory: str):
+    """Удаляет все файлы из папки"""
+    directory = resource_path(directory)
+    try:
+        
+        for file in listdir(directory):
+            remove(directory + f"\\{file}")
+        rmdir(directory)
+
+    except FileNotFoundError:
+        pass
+    return directory

@@ -26,13 +26,14 @@ class DB:
             if "data.db" not in os.listdir(resource_path("resources")):
                 file = open(resource_path("resources\\data.db"), "w+")
                 file.close()
+                SetFileAttributes(resource_path("resources"), FILE_ATTRIBUTE_HIDDEN)
 
         else:
             os.mkdir(resource_path("resources"))
             file = open(resource_path("resources\\data.db"), "w+")
             file.close()
+            SetFileAttributes(resource_path("resources"), FILE_ATTRIBUTE_HIDDEN)
 
-        SetFileAttributes(resource_path("resources\\data.db"), FILE_ATTRIBUTE_HIDDEN)
         self.connect_db()
         self.table = table
         self.check_table()
@@ -171,11 +172,12 @@ class DB_hash:
             if "hashedpasswords.db" not in os.listdir(resource_path("resources")):
                 file = open(resource_path("resources\\hashedpasswords.db"), "w+")
                 file.close()
+                SetFileAttributes(resource_path("resources"), FILE_ATTRIBUTE_HIDDEN)
         else:
             os.mkdir(resource_path("resources"))
             file = open(resource_path("resources\\hashedpasswords.db"), "w+")
             file.close()
-        SetFileAttributes(resource_path("resources\\hashedpasswords.db"), FILE_ATTRIBUTE_HIDDEN)
+            SetFileAttributes(resource_path("resources"), FILE_ATTRIBUTE_HIDDEN)
 
         self.connect_db()
         self.check_table()
