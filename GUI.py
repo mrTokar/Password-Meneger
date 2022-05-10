@@ -341,44 +341,7 @@ class MainWindow(Window):
             self.entry.config(fg = 'grey')
 
     def open_del_ac(self):
-        message = ChildWindow(self.master, 400, 133, "Подтвердите удаление")
-
-        Label(message.button_frame, height=2).pack(side=LEFT)  # заглушка для отображения 
-        message.ok_btn.place(x=135, y=5)
-        message.ok_btn.config(text='Удалить',activebackground="red", activeforeground="white", command=self.delete_login)
-        message.close_btn.place(x=210, y=5)
-
-        Label(message.main_frame, text='После заверщения все данные безвозратно удаляться\nВы точно хотите удалить пароль?\nДля подверждения введите ваш пароль').pack()
-        self.check = Entries(message.main_frame)
-        self.check.pack(padx= 20, pady=10, fill=X)
-
-        fixcolor = lambda event: self.check.config(fg="black")  # Изменение цвета на нормальный при вводе чего-либо
-        self.check.bind("<Key>", fixcolor)
-        self.check.bind("<Return>", self.delete_login)
-        
-        MessageBeep(MB_ICONHAND)
-        message.grab_focus()
-
-    def delete_login(self, event=None):
-        """Проверяет подвтерждение и истинном случае удаляет аккунт из двух БД"""
-        db = DB_hash()
-        log = self.login.get_table()
-        true_key, salt = db.load(log)[1:3]
-        if func.hash_password(self.check.get(), salt)[0] == true_key:
-            db.delete_note(log)
-            db.connection_close()
-            self.login.delete_login()
-            try:
-                os.rmdir(func.resource_path(f"resources\\images\\{log}"))
-            except FileNotFoundError:
-                pass
-            showinfo(title="Успешно", message="Аккаунт удален! Программа презапуститься")
-            # перезапуск программы
-            python = sys.executable
-            os.execl(python, python, *sys.argv)
-        else:
-            db.connection_close()
-            self.check.config(fg="red")
+        DeleteWindow(self.master, self.login)
 
 
 class ChildWindow:
@@ -426,6 +389,54 @@ class ChildWindow:
         """Закрывает окно"""
         self.root.destroy()
 
+
+class DeleteWindow(ChildWindow):
+    def __init__(self, parent: Tk, database: DB):
+        super().__init__(parent, 400, 133, "Потвердите удаление")
+        self.login = database
+
+        Label(self.button_frame, height=2).pack(side=LEFT)  # заглушка для отображения 
+        self.ok_btn.place(x=135, y=5)
+        self.ok_btn.config(text='Удалить',activebackground="red", activeforeground="white", command=self.delete_login)
+        self.close_btn.place(x=210, y=5)
+
+        Label(self.main_frame, text='После заверщения все данные безвозратно удаляться\nВы точно хотите удалить пароль?\nДля подверждения введите ваш пароль').pack()
+        self.check = Entries(self.main_frame)
+        self.check.pack(padx= 20, pady=10, fill=X)
+
+        fixcolor = lambda event: self.check.config(fg="black")  # Изменение цвета на нормальный при вводе чего-либо
+        self.check.bind("<Key>", fixcolor)
+        self.check.bind("<Return>", self.delete_login)
+        
+        MessageBeep(MB_ICONHAND)
+        self.grab_focus()
+
+    def delete_login(self, event=None):
+        """Проверяет подвтерждение и истинном случае удаляет аккунт из двух БД"""
+        db = DB_hash()
+        log = self.login.get_table()
+        true_key, salt = db.load(log)[1:3]
+        if func.hash_password(self.check.get(), salt)[0] == true_key:
+
+            db.delete_note(log)
+            db.connection_close()
+            self.login.delete_login()
+            try:
+                directory = func.resource_path(f"resources\\images\\{log}")
+                for file in os.listdir(directory):
+                    os.remove(directory + f"\\{file}")
+                os.rmdir(directory)
+
+            except FileNotFoundError:
+                pass
+
+            showinfo(title="Успешно", message="Аккаунт удален! Программа презапуститься")
+            # перезапуск программы
+            python = sys.executable
+            os.execl(python, python, *sys.argv)
+        else:
+            db.connection_close()
+            self.check.config(fg="red")
 
 class NoteWindow(ChildWindow):
     """Дочерний класс от класса ChildWindow. Конфигупрация виджетов для Note"""
@@ -1002,5 +1013,4 @@ class ForgetWindow(ChildWindow):
             self.root.destroy()
 
 if __name__ == "__main__":
-    root = LoginWindow()
-    root.run()
+    print("not work")
