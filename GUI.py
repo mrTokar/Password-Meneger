@@ -108,11 +108,18 @@ class Window:
             f"{width}x{height}+{self.master.winfo_screenwidth() // 2 - (width // 2)}+{self.master.winfo_screenheight() // 2 - (height // 2)}"
         )
         self.master.resizable(False, False)
-        self.first = True
+        self.master.protocol("WM_DELETE_WINDOW", self.stop)
 
     def run(self):
         """Открывает окно"""
         self.master.mainloop()
+
+    def stop(self):
+        if isinstance(self, MainWindow):
+            self.login.connection_close()
+        elif isinstance(self, LoginWindow):
+            self.db.connection_close()
+        sys.exit(0)
 
 
 class LoginWindow(Window):
@@ -151,7 +158,6 @@ class LoginWindow(Window):
         Buttons(login_frame, text='Забыл пароль', fg="#415869", activeforeground="#2d728a",
                 relief=FLAT, activebackground="#f0f0f0", command=openfoget).pack(anchor=E) 
 
-        self.master.protocol("WM_DELETE_WINDOW", self.stop_program)
         self.master.bind("<Return>", self.log_in)
         self.db = DB_hash()
 
@@ -185,10 +191,6 @@ class LoginWindow(Window):
     def get_login(self):
         """Возвращает login (таблицу где сохранены парли пользоваетеля)"""
         return self.login
-
-    def stop_program(self):
-        """Останавливает программу, при закрытии окна"""
-        sys.exit(0)
 
 
 class MainWindow(Window):
@@ -372,6 +374,7 @@ class ChildWindow:
 
         self.close_btn = Buttons(self.button_frame, text="Закрыть", command=self.root.destroy)
         self.ok_btn = Buttons(self.button_frame, text="Ок", activebackground='#63DB64')
+
 
     def set_defualt_button(self):
         """Устанавливает кнопки Ок и Закрыть по деволтным настройкам"""
