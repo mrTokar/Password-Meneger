@@ -197,7 +197,7 @@ class MainWindow(Window):
         """login - таблица пользователя"""
         self.login = DB(login) # подключение к аккаунту пользователя
         super().__init__(620, 610, "Passman")
-        self.obj_on_page = self.login.load_all_name()
+        self.obj_on_page = self.login.load_filter_name()
         self.active_page = 1  # активная страница
 
         # ============ виджеты поиска ========================
@@ -254,7 +254,7 @@ class MainWindow(Window):
         """Выводит все объекты удовлетворяющий введеной строке в поле Entry\n
         event - своеобразная заглушка для привязки к Enter"""
         filter = self.entry.get() if self.entry.get() != "Поиск..." else ""
-        self.obj_on_page = self.login.load_all_name(filter)
+        self.obj_on_page = self.login.load_filter_name(filter)
 
         # =========== корректировка вывода =====================
         self.button_frame.destroy()
@@ -383,7 +383,7 @@ class ChildWindow:
 
     def grab_focus(self):
         """Захватывает фокус на создавшееся окно"""
-        self.root.grab_set()
+        self.root.grab_set_global()
         self.root.focus_set()
         self.root.wait_window()
 
@@ -481,6 +481,8 @@ class NoteWindow(ChildWindow):
             side=LEFT)  # кнопка для выбора иконки
         Buttons(self.main_frame, text='Сгенерировать пароль',
                 command=self.open_generate_window).pack(side=LEFT, padx=10)  # кнопка для генерации пароля
+        self.root.bind("<Return>", commands['ok_command'])
+        self.root.bind("<Escape>", commands['close_command'])
 
     def update_icon(self, dir_image: str or None):
         """Обновляет иконку. Показывает изображение находящееся по пути dir_image. \n
@@ -739,16 +741,27 @@ class Note:
 
         return name
 
-    def save_note(self):
+    def save_note(self, event=None):
         """Сохраняет данные"""
         if self.password_window.get_name() == "":
             showwarning(title="Ошибка", message="Записка обязательно должна иметь имя")
 
         else:
-            
+
             if self.name != self.password_window.get_name():
-                self.login.delete_note(self.name)
-                self.name = self.password_window.get_name()
+
+                if self.password_window.get_name() in self.login.load_all_name():
+                    answer = askyesno(title="Предупреждение", message="Записка с таким названием уже существует!\nПри сохранении с таким имененм предыдущая запись сотрется!\nВы точнор хотите продолжить?")
+                    if answer: 
+                        self.login.delete_note(self.name)
+                        self.name = self.password_window.get_name()
+                    else:
+                        return 
+
+                else:
+                    self.login.delete_note(self.name)
+                    self.name = self.password_window.get_name()
+
             self.nickname = self.password_window.get_nickname()
             self.password = self.password_window.get_password()
             if self.icon:
@@ -766,8 +779,7 @@ class Note:
         dir_image = askopenfilename(filetypes=(('All images', '*.png;*.jpg;*.jpeg;*.jpe;*JPG;*.gif;*.ico'),
                                                ('PNG', '*.png'),
                                                ('JPEG', '*.jpg;*.jpeg;*.jpe;*JPG'),
-                                               ('GIF', '*.gif'),
-                                               ('SVG', '*.svg')))
+                                               ('GIF', '*.gif')))
         if dir_image != '':  # если окно не закрыли
             img = PilImage.open(dir_image)
             img = img.resize((100, 100), PilImage.ANTIALIAS)
@@ -798,7 +810,7 @@ class Note:
             self.password_window.close_window()
             self.update_func()
 
-    def close_note(self):
+    def close_note(self, event=None):
         """Вызывает уточняющий messagebox если новые изменения не сохранены."""
         check_name = (self.name == self.password_window.get_name())
         check_nickname = (self.nickname == self.password_window.get_nickname())
