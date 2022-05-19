@@ -3,3 +3,6 @@
 /resources/hashedpasswords.db
 /resources/images
 /test.py
+/build
+/dist
+/for installer/Output

@@ -83,7 +83,7 @@ class DB:
             if note[0] == key:
                 return list(map(str, note))
 
-    def load_all_name(self, filter='') -> list:
+    def load_filter_name(self, filter='') -> list:
         """Возвращает все запис включяющие в себя фильтр из таблицы нужной таблицы. \n
         filter - фильр, по котром производиться поиск"""
         filter= filter.lower()
@@ -99,6 +99,13 @@ class DB:
                     continue
                 obj_on_page[page].append(None)
         return obj_on_page
+
+    def load_all_name(self) -> list:
+        """Возвращает все записи пользоваетля"""
+        self.cursor.execute('SELECT * FROM {}'.format(self.table))
+        rows = self.cursor.fetchall()
+        arr = [note[0] for note in rows]
+        return arr
 
     def save(self, arr: list):
         """Сохранение списка arr [name, nickname, password, icon].
